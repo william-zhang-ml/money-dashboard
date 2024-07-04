@@ -5,10 +5,12 @@ The exact toolset presented will depend on where you're currently at.
 The UI will evolve/unlock new tools as you progress through different stages.
 """
 import tkinter as tk
+from widgets import DebtPayoffWidget
 
 
 if __name__ == '__main__':
     # create main dashboard window
     ROOT = tk.Tk()
     ROOT.title('Stage 0')
+    DebtPayoffWidget(ROOT).pack(padx=2, pady=2)
     ROOT.mainloop()
