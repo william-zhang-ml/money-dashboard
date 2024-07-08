@@ -1,14 +1,14 @@
 """Standalone tkinter widgets to insert into dashboard. """
-import tkinter as tk
+from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import utils
 
 
-class DebtPayoffWidget:
+class DebtPayoffWidget(ttk.Frame):
     """Widget for showing how APR and payment amount impact payoff time. """
-    def __init__(self, dashboard: tk.Tk) -> None:
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self.linegraph = utils.LineGraph()
-        self.canvas = FigureCanvasTkAgg(self.linegraph.fig, dashboard)
 
         # scenario 1
         _, running_balance = utils.calc_balance_over_time(
@@ -26,22 +26,28 @@ class DebtPayoffWidget:
         )
         self.linegraph.plot(running_balance, '.-', picker=5)
 
+        # scenario 3
+        _, running_balance = utils.calc_balance_over_time(
+            balance=1000,
+            payment=50,
+            apr=20
+        )
+        self.linegraph.plot(running_balance, '.-', picker=5)
+
+        # graph annotations
         self.linegraph.axes.set_title('Debt Payoff Schedule')
         self.linegraph.axes.grid()
         self.linegraph.axes.set_xlabel('months')
         self.linegraph.axes.set_ylabel('balance')
 
         # register a callback to swap selected line
+        canvas = FigureCanvasTkAgg(self.linegraph.fig, self)
+
         def swap_selected(event) -> None:
             for i_line, line in self.linegraph:
                 if event.artist == line:
                     self.linegraph.select(i_line)
-                    self.canvas.draw()
-        self.canvas.mpl_connect('pick_event', swap_selected)
+                    canvas.draw()
 
-    def pack(self, *args, **kwargs) -> None:
-        """Pack the widget in a parent widget (refer to tkinter docs). """
-        self.canvas.get_tk_widget().pack(*args, **kwargs)
-
-    def update(self) -> None:
-        """Add another payoff schedule line. """
+        canvas.mpl_connect('pick_event', swap_selected)
+        canvas.get_tk_widget().pack(padx=2, pady=2)
