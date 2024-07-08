@@ -1,36 +1,53 @@
 """Standalone tkinter widgets to insert into dashboard. """
-import tkinter as tk
-from matplotlib import pyplot as plt
+from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import numpy as np
+import utils
 
 
-class DebtPayoffWidget:
+class DebtPayoffWidget(ttk.Frame):
     """Widget for showing how APR and payment amount impact payoff time. """
-    def __init__(self, dashboard: tk.Tk) -> None:
-        self.fig, self.axes = plt.subplots(figsize=(4, 4))
-        self.axes.set_title('Debt Payoff Schedule')
-        self.axes.grid()
-        self.canvas = FigureCanvasTkAgg(self.fig, dashboard)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.linegraph = utils.LineGraph()
 
-        balance = 1000
-        apr = 25
-        payment = 100
-        periods = np.log(payment) - np.log(payment - apr * balance / 1200)
-        periods /= np.log(1 + apr / 1200)
-        periods = np.ceil(periods).astype(int)
-        running_balance = np.empty(periods + 1)
-        running_balance[0] = balance
-        for month in range(periods):
-            running_balance[month + 1] = max(
-                running_balance[month] * (1 + apr / 1200) - payment,
-                0
-            )
-        self.axes.plot(np.arange(periods + 1), running_balance, '.-')
+        # scenario 1
+        _, running_balance = utils.calc_balance_over_time(
+            balance=1000,
+            payment=50,
+            apr=25
+        )
+        self.linegraph.plot(running_balance, '.-', picker=5)
 
-    def pack(self, *args, **kwargs) -> None:
-        """Pack the widget in a parent widget (refer to tkinter docs). """
-        self.canvas.get_tk_widget().pack(*args, **kwargs)
+        # scenario 2
+        _, running_balance = utils.calc_balance_over_time(
+            balance=1000,
+            payment=100,
+            apr=25
+        )
+        self.linegraph.plot(running_balance, '.-', picker=5)
 
-    def update(self) -> None:
-        """Add another payoff schedule line. """
+        # scenario 3
+        _, running_balance = utils.calc_balance_over_time(
+            balance=1000,
+            payment=50,
+            apr=20
+        )
+        self.linegraph.plot(running_balance, '.-', picker=5)
+
+        # graph annotations
+        self.linegraph.axes.set_title('Debt Payoff Schedule')
+        self.linegraph.axes.grid()
+        self.linegraph.axes.set_xlabel('months')
+        self.linegraph.axes.set_ylabel('balance')
+
+        # register a callback to swap selected line
+        canvas = FigureCanvasTkAgg(self.linegraph.fig, self)
+
+        def swap_selected(event) -> None:
+            for i_line, line in self.linegraph:
+                if event.artist == line:
+                    self.linegraph.select(i_line)
+                    canvas.draw()
+
+        canvas.mpl_connect('pick_event', swap_selected)
+        canvas.get_tk_widget().pack(padx=2, pady=2)
