@@ -1,6 +1,5 @@
 """Standalone tkinter widgets to insert into dashboard. """
 import tkinter as tk
-from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import utils
 
@@ -17,7 +16,7 @@ class DebtPayoffWidget:
             payment=50,
             apr=25
         )
-        self.linegraph.plot(running_balance, '.-')
+        self.linegraph.plot(running_balance, '.-', picker=5)
 
         # scenario 2
         _, running_balance = utils.calc_balance_over_time(
@@ -25,12 +24,20 @@ class DebtPayoffWidget:
             payment=100,
             apr=25
         )
-        self.linegraph.plot(running_balance, '.-')
+        self.linegraph.plot(running_balance, '.-', picker=5)
 
         self.linegraph.axes.set_title('Debt Payoff Schedule')
         self.linegraph.axes.grid()
         self.linegraph.axes.set_xlabel('months')
         self.linegraph.axes.set_ylabel('balance')
+
+        # register a callback to swap selected line
+        def swap_selected(event) -> None:
+            for i_line, line in self.linegraph:
+                if event.artist == line:
+                    self.linegraph.select(i_line)
+                    self.canvas.draw()
+        self.canvas.mpl_connect('pick_event', swap_selected)
 
     def pack(self, *args, **kwargs) -> None:
         """Pack the widget in a parent widget (refer to tkinter docs). """

@@ -1,5 +1,6 @@
 """Widget support code, mostly backend data structures and math. """
-from typing import List, Tuple
+from typing import Iterable, List, Tuple
+from matplotlib.lines import Line2D
 from matplotlib import pyplot as plt
 
 
@@ -10,6 +11,15 @@ class LineGraph:
         self.fig, self.axes = plt.subplots()
         self.lines = []            # lines on graph
         self.selected: int = None  # index of selected line
+
+    def __iter__(self) -> Iterable[Tuple[int, Line2D]]:
+        """Loop over graph lines.
+
+        Returns:
+            Iterable[Tuple[int, Line2D]]: index of line, line
+        """
+        for i_line, line in enumerate(self.lines):
+            yield i_line, line
 
     def plot(self, *args, **kwargs) -> bool:
         """Plot a new line.
