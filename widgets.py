@@ -2,7 +2,7 @@
 import tkinter as tk
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import numpy as np
+import utils
 
 
 class DebtPayoffWidget:
@@ -13,20 +13,8 @@ class DebtPayoffWidget:
         self.axes.grid()
         self.canvas = FigureCanvasTkAgg(self.fig, dashboard)
 
-        balance = 1000
-        apr = 25
-        payment = 100
-        periods = np.log(payment) - np.log(payment - apr * balance / 1200)
-        periods /= np.log(1 + apr / 1200)
-        periods = np.ceil(periods).astype(int)
-        running_balance = np.empty(periods + 1)
-        running_balance[0] = balance
-        for month in range(periods):
-            running_balance[month + 1] = max(
-                running_balance[month] * (1 + apr / 1200) - payment,
-                0
-            )
-        self.axes.plot(np.arange(periods + 1), running_balance, '.-')
+        _, running_balance = utils.calc_balance_over_time()
+        self.axes.plot(running_balance, '.-')
 
     def pack(self, *args, **kwargs) -> None:
         """Pack the widget in a parent widget (refer to tkinter docs). """

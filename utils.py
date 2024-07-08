@@ -1,4 +1,5 @@
 """Widget support code, mostly backend data structures and math. """
+from typing import List, Tuple
 from matplotlib import pyplot as plt
 
 
@@ -67,3 +68,30 @@ class LineGraph:
     def num_lines(self) -> int:
         """int: the number of lines on the graph """
         return len(self.lines)
+
+
+def calc_balance_over_time(
+    balance: float = 1000,
+    payment: float = 25,
+    apr: float = 25
+) -> Tuple[int, List[float]]:
+    """Calculate how long it takes to payoff a balance.
+
+    Args:
+        balance (float): initial balance amount
+        payment (float): monthly payment amount
+        apr (float): annual percentage rate
+
+    Returns:
+        int, np.ndarray: months until paid off, running balance over months
+    """
+    interest = apr * balance / 1200
+    if payment <= interest:
+        raise RuntimeError('interest exceeds payment')
+    running_balance = []
+    while balance > 0:
+        running_balance.append(balance)
+        balance = balance + interest - payment
+        interest = apr * balance / 1200
+    running_balance.append(0)
+    return len(running_balance) - 1, running_balance
