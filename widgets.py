@@ -66,14 +66,20 @@ class NaturalNumberEntry(ttk.Frame):
 
     def run_traces(self, *_) -> None:
         """Send entry value (or repeat previous value if '') to observers. """
-        val_to_send = self.entry_var.get()
-        if val_to_send == '':
+        val_to_send = self.value
+        if val_to_send is None:
             val_to_send = self._backup_value
         else:
-            val_to_send = int(val_to_send)
             self._backup_value = val_to_send
         for callback in self._traces:
             callback(val_to_send)
+
+    @property
+    def value(self) -> int:
+        """int: current entry value (None if '') """
+        value = self.entry_var.get()
+        value = None if value == '' else int(value)
+        return value
 
 
 class DebtPayoffWidget(ttk.Frame):
@@ -119,7 +125,38 @@ class DebtPayoffWidget(ttk.Frame):
             for i_line, line in self.linegraph:
                 if event.artist == line:
                     self.linegraph.select(i_line)
-                    canvas.draw()
 
         canvas.mpl_connect('pick_event', swap_selected)
-        canvas.get_tk_widget().pack(padx=2, pady=2)
+        canvas.get_tk_widget().pack(padx=2, pady=2, fill=tk.X)
+
+        # debt starting balance
+        self.balance = NaturalNumberEntry(self)
+        self.balance.set_text('Balance')
+        self.balance.pack(padx=2, pady=2, fill=tk.X)
+        self.balance.add_trace(self.entry_change_callback)
+
+        # monthly payment
+        self.payment = NaturalNumberEntry(self)
+        self.payment.set_text('Monthly Payment')
+        self.payment.pack(padx=2, pady=2, fill=tk.X)
+        self.payment.add_trace(self.entry_change_callback)
+
+        # monthly payment
+        self.apr = NaturalNumberEntry(self)
+        self.apr.set_text('APR')
+        self.apr.pack(padx=2, pady=2, fill=tk.X)
+        self.apr.add_trace(self.entry_change_callback)
+
+    def entry_change_callback(self, _) -> None:
+        """Update currently-selected line. """
+        try:
+            _, running_bal = utils.calc_balance_over_time(
+                balance=self.balance.value,
+                payment=self.payment.value,
+                apr=self.apr.value
+            )
+            self.linegraph.update(range(len(running_bal)), running_bal)
+        except RuntimeError:
+            pass  # intermediate entry values where interest > payment
+        except TypeError:
+            pass  # balance, payment, or APR have None values
