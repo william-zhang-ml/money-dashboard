@@ -56,6 +56,20 @@ class NaturalNumberEntry(ttk.Frame):
         """
         self.prompt.config(text=text)
 
+    def set_entry(self, text: str) -> bool:
+        """Set entry text.
+
+        Args:
+            text (str): what the entry box should say
+
+        Returns:
+            bool: whether text is valid and set as the entry text
+        """
+        if not self.is_valid(text):
+            return False
+        self.entry_var.set(text)
+        return True
+
     def add_trace(self, callback: Callable) -> None:
         """Add a new observer trace to notify when entry changes.
 
@@ -94,7 +108,10 @@ class DebtPayoffWidget(ttk.Frame):
             payment=25,
             apr=25
         )
-        self.linegraph.plot(running_balance, '.-', picker=5)
+        self.linegraph.plot(
+            running_balance, '.-', picker=5,
+            metadata={'balance': 1000, 'payment': 25, 'apr': 25}
+        )
 
         # graph annotations
         self.linegraph.axes.set_title('Debt Payoff Schedule')
@@ -109,6 +126,9 @@ class DebtPayoffWidget(ttk.Frame):
             for i_line, line in self.linegraph:
                 if event.artist == line:
                     self.linegraph.select(i_line)
+                    self.balance.set_entry(str(line.metadata['balance']))
+                    self.payment.set_entry(str(line.metadata['payment']))
+                    self.apr.set_entry(str(line.metadata['apr']))
 
         canvas.mpl_connect('pick_event', swap_selected)
         canvas.get_tk_widget().pack(padx=2, pady=2, fill=tk.X)
@@ -134,12 +154,17 @@ class DebtPayoffWidget(ttk.Frame):
     def entry_change_callback(self, _) -> None:
         """Update currently-selected line. """
         try:
-            _, running_bal = utils.calc_balance_over_time(
-                balance=self.balance.value,
-                payment=self.payment.value,
-                apr=self.apr.value
+            meta = {
+                'balance': self.balance.value,
+                'payment': self.payment.value,
+                'apr': self.apr.value
+            }
+            _, running_bal = utils.calc_balance_over_time(**meta)
+            self.linegraph.update(
+                range(len(running_bal)),
+                running_bal,
+                metadata=meta
             )
-            self.linegraph.update(range(len(running_bal)), running_bal)
         except RuntimeError:
             pass  # intermediate entry values where interest > payment
         except TypeError:

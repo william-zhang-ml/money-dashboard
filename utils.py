@@ -1,4 +1,5 @@
 """Widget support code, mostly backend data structures and math. """
+from copy import deepcopy
 from typing import Iterable, List, Tuple, Union
 from matplotlib.lines import Line2D
 from matplotlib import pyplot as plt
@@ -24,7 +25,7 @@ class LineGraph:
         for i_line, line in enumerate(self.lines):
             yield i_line, line
 
-    def plot(self, *args, **kwargs) -> bool:
+    def plot(self, *args, metadata: dict = None, **kwargs) -> bool:
         """Plot a new line.
 
         Args:
@@ -36,13 +37,16 @@ class LineGraph:
         if len(self.lines) == self.max_lines:
             return False
         self.lines.append(self.axes.plot(*args, **kwargs)[0])
+        if metadata is not None:
+            self.lines[-1].metadata = deepcopy(metadata)
         self.select(self.num_lines - 1)
         return True
 
     def update(
         self,
         xdata: Iterable[Numeric],
-        ydata: Iterable[Numeric]
+        ydata: Iterable[Numeric],
+        metadata: dict
     ) -> bool:
         """Update the currently-selected line.
 
@@ -56,6 +60,7 @@ class LineGraph:
         if self.num_lines == 0:
             return False
         self.lines[self.selected].set_data(xdata, ydata)
+        self.lines[self.selected].metadata = deepcopy(metadata)
         self.axes.relim()
         self.axes.autoscale()
         self.fig.canvas.draw()
