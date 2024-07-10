@@ -1,7 +1,10 @@
 """Widget support code, mostly backend data structures and math. """
-from typing import Iterable, List, Tuple
+from typing import Iterable, List, Tuple, Union
 from matplotlib.lines import Line2D
 from matplotlib import pyplot as plt
+
+
+Numeric = Union[int, float]
 
 
 class LineGraph:
@@ -36,8 +39,30 @@ class LineGraph:
         self.select(self.num_lines - 1)
         return True
 
+    def update(
+        self,
+        xdata: Iterable[Numeric],
+        ydata: Iterable[Numeric]
+    ) -> bool:
+        """Update the currently-selected line.
+
+        Args:
+            xdata (Iterable[Numeric]): new line x data
+            ydata (Iterable[Numeric]): new line y data
+
+        Returns:
+            bool: whether currently-selected line was updated
+        """
+        if self.num_lines == 0:
+            return False
+        self.lines[self.selected].set_data(xdata, ydata)
+        self.axes.relim()
+        self.axes.autoscale()
+        self.fig.canvas.draw()
+        return True
+
     def remove(self) -> bool:
-        """Remove the active line.
+        """Remove the currently-selected line.
 
         Returns:
             bool: whether a line was removed
@@ -72,6 +97,7 @@ class LineGraph:
         self.lines[self.selected].set_marker('.')
         self.lines[self.selected].set_linestyle('--')
 
+        self.fig.canvas.draw()
         return True
 
     @property

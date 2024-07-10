@@ -1,7 +1,85 @@
 """Standalone tkinter widgets to insert into dashboard. """
+import tkinter as tk
 from tkinter import ttk
+from typing import Callable, List
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import utils
+
+
+class NaturalNumberEntry(ttk.Frame):
+    """Label + Entry widget for entering natural numbers. """
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        # label prompt for entry
+        self.prompt = ttk.Label(self)
+        self.prompt.pack(padx=2, pady=2, side=tk.LEFT)
+
+        # entry box and backend entry data variable
+        self.entry_var = tk.StringVar()
+        self.entry = ttk.Entry(
+            self,
+            textvariable=self.entry_var,
+            validate='key',
+            validatecommand=(
+                self.register(self.is_valid),
+                '%P'
+            )
+        )
+        self.entry.pack(padx=2, pady=2, side=tk.LEFT)
+
+        # setup mechanism to update observers/subscribers
+        self.entry_var.trace_add('write', self.run_traces)
+        self._traces: List[Callable] = []
+        self._backup_value = 0
+
+    @staticmethod
+    def is_valid(proposed: str) -> bool:
+        """Check whether text is a natural number (no leading zero).
+           Empty string is also okay.
+
+        Args:
+            proposed (str): text to check
+
+        Returns:
+            bool: whether text is a natural number (no leading zero)
+        """
+        if proposed == '':
+            return True
+        return proposed[0] != '0' and proposed.isdigit()
+
+    def set_text(self, text: str) -> None:
+        """Set label text.
+
+        Args:
+            text (str): what the label should say
+        """
+        self.prompt.config(text=text)
+
+    def add_trace(self, callback: Callable) -> None:
+        """Add a new observer trace to notify when entry changes.
+
+        Args:
+            callback (Callable): function that accepts an int
+        """
+        self._traces.append(callback)
+
+    def run_traces(self, *_) -> None:
+        """Send entry value (or repeat previous value if '') to observers. """
+        val_to_send = self.value
+        if val_to_send is None:
+            val_to_send = self._backup_value
+        else:
+            self._backup_value = val_to_send
+        for callback in self._traces:
+            callback(val_to_send)
+
+    @property
+    def value(self) -> int:
+        """int: current entry value (None if '') """
+        value = self.entry_var.get()
+        value = None if value == '' else int(value)
+        return value
 
 
 class DebtPayoffWidget(ttk.Frame):
@@ -47,7 +125,38 @@ class DebtPayoffWidget(ttk.Frame):
             for i_line, line in self.linegraph:
                 if event.artist == line:
                     self.linegraph.select(i_line)
-                    canvas.draw()
 
         canvas.mpl_connect('pick_event', swap_selected)
-        canvas.get_tk_widget().pack(padx=2, pady=2)
+        canvas.get_tk_widget().pack(padx=2, pady=2, fill=tk.X)
+
+        # debt starting balance
+        self.balance = NaturalNumberEntry(self)
+        self.balance.set_text('Balance')
+        self.balance.pack(padx=2, pady=2, fill=tk.X)
+        self.balance.add_trace(self.entry_change_callback)
+
+        # monthly payment
+        self.payment = NaturalNumberEntry(self)
+        self.payment.set_text('Monthly Payment')
+        self.payment.pack(padx=2, pady=2, fill=tk.X)
+        self.payment.add_trace(self.entry_change_callback)
+
+        # monthly payment
+        self.apr = NaturalNumberEntry(self)
+        self.apr.set_text('APR')
+        self.apr.pack(padx=2, pady=2, fill=tk.X)
+        self.apr.add_trace(self.entry_change_callback)
+
+    def entry_change_callback(self, _) -> None:
+        """Update currently-selected line. """
+        try:
+            _, running_bal = utils.calc_balance_over_time(
+                balance=self.balance.value,
+                payment=self.payment.value,
+                apr=self.apr.value
+            )
+            self.linegraph.update(range(len(running_bal)), running_bal)
+        except RuntimeError:
+            pass  # intermediate entry values where interest > payment
+        except TypeError:
+            pass  # balance, payment, or APR have None values
