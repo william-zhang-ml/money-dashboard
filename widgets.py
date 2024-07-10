@@ -88,27 +88,11 @@ class DebtPayoffWidget(ttk.Frame):
         super().__init__(*args, **kwargs)
         self.linegraph = utils.LineGraph()
 
-        # scenario 1
+        # initial candidate line
         _, running_balance = utils.calc_balance_over_time(
             balance=1000,
-            payment=50,
+            payment=25,
             apr=25
-        )
-        self.linegraph.plot(running_balance, '.-', picker=5)
-
-        # scenario 2
-        _, running_balance = utils.calc_balance_over_time(
-            balance=1000,
-            payment=100,
-            apr=25
-        )
-        self.linegraph.plot(running_balance, '.-', picker=5)
-
-        # scenario 3
-        _, running_balance = utils.calc_balance_over_time(
-            balance=1000,
-            payment=50,
-            apr=20
         )
         self.linegraph.plot(running_balance, '.-', picker=5)
 
