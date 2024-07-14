@@ -126,7 +126,7 @@ class DebtPayoffWidget(ttk.Frame):
         self.balance = NaturalNumberEntry(self)
         self.balance.set_text('Balance')
         self.balance.pack(padx=2, pady=2, fill=tk.X)
-        self.balance.add_trace(self.entry_change_callback)
+        # self.balance.add_trace(self.entry_change_callback)
 
         # monthly payment
         self.payment = NaturalNumberEntry(self)
@@ -138,7 +138,7 @@ class DebtPayoffWidget(ttk.Frame):
         self.apr = NaturalNumberEntry(self)
         self.apr.set_text('APR')
         self.apr.pack(padx=2, pady=2, fill=tk.X)
-        self.apr.add_trace(self.entry_change_callback)
+        # self.apr.add_trace(self.entry_change_callback)
 
         # add button
         self.add_button = ttk.Button(
