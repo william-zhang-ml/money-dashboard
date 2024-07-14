@@ -102,17 +102,6 @@ class DebtPayoffWidget(ttk.Frame):
         super().__init__(*args, **kwargs)
         self.linegraph = utils.LineGraph()
 
-        # initial candidate line
-        _, running_balance = utils.calc_balance_over_time(
-            balance=1000,
-            payment=25,
-            apr=25
-        )
-        self.linegraph.plot(
-            running_balance, '.-', picker=5,
-            metadata={'balance': 1000, 'payment': 25, 'apr': 25}
-        )
-
         # graph annotations
         self.linegraph.axes.set_title('Debt Payoff Schedule')
         self.linegraph.axes.grid()
@@ -145,11 +134,31 @@ class DebtPayoffWidget(ttk.Frame):
         self.payment.pack(padx=2, pady=2, fill=tk.X)
         self.payment.add_trace(self.entry_change_callback)
 
-        # monthly payment
+        # annual percentage rate (APR)
         self.apr = NaturalNumberEntry(self)
         self.apr.set_text('APR')
         self.apr.pack(padx=2, pady=2, fill=tk.X)
         self.apr.add_trace(self.entry_change_callback)
+
+        # add button
+        self.add_button = ttk.Button(
+            self,
+            text='New line',
+            command=self.add_candidate_line
+        )
+        self.add_button.pack(padx=2, pady=2, fill=tk.X)
+
+    def add_candidate_line(self) -> None:
+        """Add a new candiate line to the graph. """
+        _, running_balance = utils.calc_balance_over_time(
+            balance=1000,
+            payment=25,
+            apr=25
+        )
+        self.linegraph.plot(
+            running_balance, '.-', picker=5,
+            metadata={'balance': 1000, 'payment': 25, 'apr': 25}
+        )
 
     def entry_change_callback(self, _) -> None:
         """Update currently-selected line. """
