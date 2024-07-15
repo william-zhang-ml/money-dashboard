@@ -161,6 +161,14 @@ class DebtPayoffWidget(ttk.Frame):
         )
         self.add_button.pack(padx=2, pady=2, fill=tk.X)
 
+        # delete button
+        self.del_button = ttk.Button(
+            self,
+            text='Delete',
+            command=self.delete_line
+        )
+        self.del_button.pack(padx=2, pady=2, fill=tk.X)
+
     def enable_entry_traces(self) -> None:
         """Turn on entry pub-sub traces. """
         self.balance.enable_traces()
@@ -184,6 +192,16 @@ class DebtPayoffWidget(ttk.Frame):
             running_balance, '.-', picker=5,
             metadata={'balance': 1000, 'payment': 25, 'apr': 25}
         )
+
+    def delete_line(self) -> None:
+        """Delete the selected line. """
+        self.linegraph.remove()
+        # line = self.linegraph.lines[self.linegraph.selected]
+        # self.disable_entry_traces()
+        # self.balance.set_entry(str(line.metadata['balance']))
+        # self.payment.set_entry(str(line.metadata['payment']))
+        # self.apr.set_entry(str(line.metadata['apr']))
+        # self.enable_entry_traces()
 
     def entry_change_callback(self, _) -> None:
         """Update currently-selected line. """
