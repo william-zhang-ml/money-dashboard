@@ -29,6 +29,7 @@ class NaturalNumberEntry(ttk.Frame):
         self.entry.pack(padx=2, pady=2, side=tk.LEFT)
 
         # setup mechanism to update observers/subscribers
+        self.disabled = False
         self.entry_var.trace_add('write', self.run_traces)
         self._traces: List[Callable] = []
         self._backup_value = 0
@@ -80,6 +81,8 @@ class NaturalNumberEntry(ttk.Frame):
 
     def run_traces(self, *_) -> None:
         """Send entry value (or repeat previous value if '') to observers. """
+        if self.disabled:
+            return
         val_to_send = self.value
         if val_to_send is None:
             val_to_send = self._backup_value
@@ -87,6 +90,14 @@ class NaturalNumberEntry(ttk.Frame):
             self._backup_value = val_to_send
         for callback in self._traces:
             callback(val_to_send)
+
+    def enable_traces(self) -> None:
+        """Turn on pub-sub traces. """
+        self.disabled = False
+
+    def disable_traces(self) -> None:
+        """Turn off pub-sub traces. """
+        self.disabled = True
 
     @property
     def value(self) -> int:
@@ -115,9 +126,11 @@ class DebtPayoffWidget(ttk.Frame):
             for i_line, line in self.linegraph:
                 if event.artist == line:
                     self.linegraph.select(i_line)
+                    self.disable_entry_traces()
                     self.balance.set_entry(str(line.metadata['balance']))
                     self.payment.set_entry(str(line.metadata['payment']))
                     self.apr.set_entry(str(line.metadata['apr']))
+                    self.enable_entry_traces()
 
         canvas.mpl_connect('pick_event', swap_selected)
         canvas.get_tk_widget().pack(padx=2, pady=2, fill=tk.X)
@@ -126,7 +139,7 @@ class DebtPayoffWidget(ttk.Frame):
         self.balance = NaturalNumberEntry(self)
         self.balance.set_text('Balance')
         self.balance.pack(padx=2, pady=2, fill=tk.X)
-        # self.balance.add_trace(self.entry_change_callback)
+        self.balance.add_trace(self.entry_change_callback)
 
         # monthly payment
         self.payment = NaturalNumberEntry(self)
@@ -138,7 +151,7 @@ class DebtPayoffWidget(ttk.Frame):
         self.apr = NaturalNumberEntry(self)
         self.apr.set_text('APR')
         self.apr.pack(padx=2, pady=2, fill=tk.X)
-        # self.apr.add_trace(self.entry_change_callback)
+        self.apr.add_trace(self.entry_change_callback)
 
         # add button
         self.add_button = ttk.Button(
@@ -147,6 +160,18 @@ class DebtPayoffWidget(ttk.Frame):
             command=self.add_candidate_line
         )
         self.add_button.pack(padx=2, pady=2, fill=tk.X)
+
+    def enable_entry_traces(self) -> None:
+        """Turn on entry pub-sub traces. """
+        self.balance.enable_traces()
+        self.payment.enable_traces()
+        self.apr.enable_traces()
+
+    def disable_entry_traces(self) -> None:
+        """Turn off entry pub-sub traces. """
+        self.balance.disable_traces()
+        self.payment.disable_traces()
+        self.apr.disable_traces()
 
     def add_candidate_line(self) -> None:
         """Add a new candiate line to the graph. """
