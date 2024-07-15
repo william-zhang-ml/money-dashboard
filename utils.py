@@ -13,8 +13,7 @@ class LineGraph:
     def __init__(self, max_lines: int = 5):
         self.max_lines = max_lines
         self.fig, self.axes = plt.subplots()
-        self.lines = []            # lines on graph
-        self.selected: int = None  # index of selected line
+        self.lines = []  # lines on graph
 
     def __iter__(self) -> Iterable[Tuple[int, Line2D]]:
         """Loop over graph lines.
@@ -29,7 +28,8 @@ class LineGraph:
         """Plot a new line.
 
         Args:
-            (see matplotlib.axes.Axes.plot)
+            metadata (dict): user-defined metadata
+            (also see matplotlib.axes.Axes.plot)
 
         Returns:
             bool: whether a new line was plotted
@@ -39,69 +39,80 @@ class LineGraph:
         self.lines.append(self.axes.plot(*args, **kwargs)[0])
         if metadata is not None:
             self.lines[-1].metadata = deepcopy(metadata)
-        self.select(self.num_lines - 1)
+        self.fig.canvas.draw()
         return True
 
     def update(
         self,
+        which: int,
         xdata: Iterable[Numeric],
         ydata: Iterable[Numeric],
         metadata: dict
     ) -> bool:
-        """Update the currently-selected line.
+        """Update a line in the graph.
 
         Args:
+            which (int): index of line to update
             xdata (Iterable[Numeric]): new line x data
             ydata (Iterable[Numeric]): new line y data
+            metadata (dict): user-defined metadata
 
         Returns:
-            bool: whether currently-selected line was updated
+            bool: whether a line was updated
         """
-        if self.num_lines == 0:
+        if not 0 <= which < self.num_lines:
             return False
-        self.lines[self.selected].set_data(xdata, ydata)
-        self.lines[self.selected].metadata = deepcopy(metadata)
+        self.lines[which].set_data(xdata, ydata)
+        self.lines[which].metadata = deepcopy(metadata)
         self.axes.relim()
         self.axes.autoscale()
         self.fig.canvas.draw()
         return True
 
-    def remove(self) -> bool:
-        """Remove the currently-selected line.
+    def remove(self, which: int) -> bool:
+        """Remove a line in the graph
+
+        Args:
+            which (int): index of line to remove
 
         Returns:
             bool: whether a line was removed
         """
-        if self.num_lines == 0:
+        if not 0 <= which < self.num_lines:
             return False
-        self.lines.pop(self.selected).remove()
-        self.selected = None
-        if self.num_lines > 0:
-            self.select(self.num_lines - 1)
+        self.lines.pop(which).remove()
+        self.fig.canvas.draw()
         return True
 
     def select(self, which: int) -> bool:
-        """Change which line is selected in the graph.
+        """Visually select a line in the graph.
 
         Args:
             which (int): index of line to select
 
         Returns:
-            bool: whether the index was selected
+            bool: whether a line was selected
         """
         if not 0 <= which < self.num_lines:
             return False
+        self.lines[which].set_marker('.')
+        self.lines[which].set_linestyle('--')
+        self.fig.canvas.draw()
+        return True
 
-        # deactivate current
-        if self.selected is not None:
-            self.lines[self.selected].set_marker('')
-            self.lines[self.selected].set_linestyle('-')
+    def unselect(self, which: int) -> bool:
+        """Visually unselect a line in the graph.
 
-        # activate selection
-        self.selected = which
-        self.lines[self.selected].set_marker('.')
-        self.lines[self.selected].set_linestyle('--')
+        Args:
+            which (int): index of line to unselect
 
+        Returns:
+            bool: whether a line was unselected
+        """
+        if not 0 <= which < self.num_lines:
+            return False
+        self.lines[which].set_marker('')
+        self.lines[which].set_linestyle('-')
         self.fig.canvas.draw()
         return True
 

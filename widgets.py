@@ -112,6 +112,7 @@ class DebtPayoffWidget(ttk.Frame):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.linegraph = utils.LineGraph()
+        self.selected = None  # index of selected line
 
         # graph annotations
         self.linegraph.axes.set_title('Debt Payoff Schedule')
@@ -123,6 +124,10 @@ class DebtPayoffWidget(ttk.Frame):
         canvas = FigureCanvasTkAgg(self.linegraph.fig, self)
 
         def swap_selected(event) -> None:
+            # deselect the current line
+            if self.selected is not None:
+                self.linegraph.unselect(self.selected)
+                self.selected = None
             for i_line, line in self.linegraph:
                 if event.artist == line:
                     self.linegraph.select(i_line)
@@ -131,6 +136,7 @@ class DebtPayoffWidget(ttk.Frame):
                     self.payment.set_entry(str(line.metadata['payment']))
                     self.apr.set_entry(str(line.metadata['apr']))
                     self.enable_entry_traces()
+                    self.selected = i_line
 
         canvas.mpl_connect('pick_event', swap_selected)
         canvas.get_tk_widget().pack(padx=2, pady=2, fill=tk.X)
@@ -157,7 +163,7 @@ class DebtPayoffWidget(ttk.Frame):
         self.add_button = ttk.Button(
             self,
             text='New line',
-            command=self.add_candidate_line
+            command=self.add_line
         )
         self.add_button.pack(padx=2, pady=2, fill=tk.X)
 
@@ -181,43 +187,41 @@ class DebtPayoffWidget(ttk.Frame):
         self.payment.disable_traces()
         self.apr.disable_traces()
 
-    def add_candidate_line(self) -> None:
-        """Add a new candiate line to the graph. """
+    def add_line(self) -> None:
+        """Add a new line to the graph. """
         _, running_balance = utils.calc_balance_over_time(
             balance=1000,
             payment=25,
             apr=25
         )
         self.linegraph.plot(
-            running_balance, '.-', picker=5,
+            running_balance, '-', picker=5,
             metadata={'balance': 1000, 'payment': 25, 'apr': 25}
         )
 
     def delete_line(self) -> None:
         """Delete the selected line. """
-        self.linegraph.remove()
-        # line = self.linegraph.lines[self.linegraph.selected]
-        # self.disable_entry_traces()
-        # self.balance.set_entry(str(line.metadata['balance']))
-        # self.payment.set_entry(str(line.metadata['payment']))
-        # self.apr.set_entry(str(line.metadata['apr']))
-        # self.enable_entry_traces()
+        self.linegraph.remove(self.selected)
+        self.selected = None
 
     def entry_change_callback(self, _) -> None:
         """Update currently-selected line. """
+        meta = {
+            'balance': self.balance.value,
+            'payment': self.payment.value,
+            'apr': self.apr.value
+        }
+
         try:
-            meta = {
-                'balance': self.balance.value,
-                'payment': self.payment.value,
-                'apr': self.apr.value
-            }
             _, running_bal = utils.calc_balance_over_time(**meta)
-            self.linegraph.update(
-                range(len(running_bal)),
-                running_bal,
-                metadata=meta
-            )
         except RuntimeError:
             pass  # intermediate entry values where interest > payment
         except TypeError:
             pass  # balance, payment, or APR have None values
+        else:
+            self.linegraph.update(
+                self.selected,
+                range(len(running_bal)),
+                running_bal,
+                metadata=meta
+            )
