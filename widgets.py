@@ -130,10 +130,19 @@ class DebtPayoffWidget(ttk.Frame):
                     break
 
             # pylint: disable=undefined-loop-variable
+            self.disable_entry_traces()
+            self.balance.entry.delete(0, tk.END)
+            self.payment.entry.delete(0, tk.END)
+            self.apr.entry.delete(0, tk.END)
+            self.balance.entry.config(state='disabled')
+            self.payment.entry.config(state='disabled')
+            self.apr.entry.config(state='disabled')
             if self.selected is None:
                 # select line
                 self.linegraph.select(i_line)
-                self.disable_entry_traces()
+                self.balance.entry.config(state='normal')
+                self.payment.entry.config(state='normal')
+                self.apr.entry.config(state='normal')
                 self.balance.set_entry(str(line.metadata['balance']))
                 self.payment.set_entry(str(line.metadata['payment']))
                 self.apr.set_entry(str(line.metadata['apr']))
@@ -150,6 +159,9 @@ class DebtPayoffWidget(ttk.Frame):
                 # select line
                 self.linegraph.select(i_line)
                 self.disable_entry_traces()
+                self.balance.entry.config(state='normal')
+                self.payment.entry.config(state='normal')
+                self.apr.entry.config(state='normal')
                 self.balance.set_entry(str(line.metadata['balance']))
                 self.payment.set_entry(str(line.metadata['payment']))
                 self.apr.set_entry(str(line.metadata['apr']))
@@ -177,6 +189,11 @@ class DebtPayoffWidget(ttk.Frame):
         self.apr.set_text('APR')
         self.apr.pack(padx=2, pady=2, fill=tk.X)
         self.apr.add_trace(self.entry_change_callback)
+
+        # disable entries b/c new widget instance has no lines to select
+        self.balance.entry.config(state='disabled')
+        self.payment.entry.config(state='disabled')
+        self.apr.entry.config(state='disabled')
 
         # add button
         self.add_button = ttk.Button(
@@ -220,8 +237,16 @@ class DebtPayoffWidget(ttk.Frame):
 
     def delete_line(self) -> None:
         """Delete the selected line. """
+        if self.selected is None:
+            return
         self.linegraph.remove(self.selected)
         self.selected = None
+        self.balance.entry.delete(0, tk.END)
+        self.payment.entry.delete(0, tk.END)
+        self.apr.entry.delete(0, tk.END)
+        self.balance.entry.config(state='disabled')
+        self.payment.entry.config(state='disabled')
+        self.apr.entry.config(state='disabled')
 
     def entry_change_callback(self, _) -> None:
         """Update currently-selected line. """
