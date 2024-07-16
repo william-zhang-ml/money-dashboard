@@ -124,19 +124,38 @@ class DebtPayoffWidget(ttk.Frame):
         canvas = FigureCanvasTkAgg(self.linegraph.fig, self)
 
         def swap_selected(event) -> None:
-            # deselect the current line
-            if self.selected is not None:
-                self.linegraph.unselect(self.selected)
-                self.selected = None
+            # identify which line user clicked on
             for i_line, line in self.linegraph:
                 if event.artist == line:
-                    self.linegraph.select(i_line)
-                    self.disable_entry_traces()
-                    self.balance.set_entry(str(line.metadata['balance']))
-                    self.payment.set_entry(str(line.metadata['payment']))
-                    self.apr.set_entry(str(line.metadata['apr']))
-                    self.enable_entry_traces()
-                    self.selected = i_line
+                    break
+
+            # pylint: disable=undefined-loop-variable
+            if self.selected is None:
+                # select line
+                self.linegraph.select(i_line)
+                self.disable_entry_traces()
+                self.balance.set_entry(str(line.metadata['balance']))
+                self.payment.set_entry(str(line.metadata['payment']))
+                self.apr.set_entry(str(line.metadata['apr']))
+                self.enable_entry_traces()
+                self.selected = i_line
+            elif self.selected == i_line:
+                # unselect previously-selected line
+                self.linegraph.unselect(self.selected)
+                self.selected = None
+            else:
+                # unselect previously-selected line
+                self.linegraph.unselect(self.selected)
+
+                # select line
+                self.linegraph.select(i_line)
+                self.disable_entry_traces()
+                self.balance.set_entry(str(line.metadata['balance']))
+                self.payment.set_entry(str(line.metadata['payment']))
+                self.apr.set_entry(str(line.metadata['apr']))
+                self.enable_entry_traces()
+                self.selected = i_line
+            # pylint: enable=undefined-loop-variable
 
         canvas.mpl_connect('pick_event', swap_selected)
         canvas.get_tk_widget().pack(padx=2, pady=2, fill=tk.X)
