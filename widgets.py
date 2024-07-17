@@ -221,6 +221,7 @@ class DebtPayoffWidget(tk.Frame):
 
         # hotkeys (assume master == root)
         self.master.bind('<Control-s>', lambda _: self.download_image())
+        self.master.bind('<BackSpace>', lambda _: self.delete_line())
 
     def enable_entry_traces(self) -> None:
         """Turn on entry pub-sub traces. """
