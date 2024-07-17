@@ -107,7 +107,7 @@ class NaturalNumberEntry(ttk.Frame):
         return value
 
 
-class DebtPayoffWidget(ttk.Frame):
+class DebtPayoffWidget(tk.Frame):
     """Widget for showing how APR and payment amount impact payoff time. """
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -170,7 +170,7 @@ class DebtPayoffWidget(ttk.Frame):
             # pylint: enable=undefined-loop-variable
 
         canvas.mpl_connect('pick_event', swap_selected)
-        canvas.get_tk_widget().pack(padx=2, pady=2, fill=tk.X)
+        canvas.get_tk_widget().pack(expand=True, fill=tk.BOTH, padx=2, pady=2)
 
         # debt starting balance
         self.balance = NaturalNumberEntry(self)
