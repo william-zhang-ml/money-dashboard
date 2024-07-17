@@ -12,5 +12,5 @@ if __name__ == '__main__':
     # create main dashboard window
     ROOT = tk.Tk()
     ROOT.title('Stage 0')
-    DebtPayoffWidget(ROOT).pack(padx=2, pady=2)
+    DebtPayoffWidget(ROOT).pack(expand=True, fill=tk.BOTH, padx=2, pady=2)
     ROOT.mainloop()
