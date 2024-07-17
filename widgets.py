@@ -219,6 +219,9 @@ class DebtPayoffWidget(tk.Frame):
         )
         self.save_button.pack(padx=2, pady=2, fill=tk.X)
 
+        # hotkeys (assume master == root)
+        self.master.bind('<Control-s>', lambda _: self.download_image())
+
     def enable_entry_traces(self) -> None:
         """Turn on entry pub-sub traces. """
         self.balance.enable_traces()
