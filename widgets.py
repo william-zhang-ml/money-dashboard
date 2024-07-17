@@ -1,6 +1,6 @@
 """Standalone tkinter widgets to insert into dashboard. """
 import tkinter as tk
-from tkinter import ttk
+from tkinter import filedialog, ttk
 from typing import Callable, List
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import utils
@@ -211,6 +211,14 @@ class DebtPayoffWidget(ttk.Frame):
         )
         self.del_button.pack(padx=2, pady=2, fill=tk.X)
 
+        # save button
+        self.save_button = ttk.Button(
+            self,
+            text='Download image',
+            command=self.download_image
+        )
+        self.save_button.pack(padx=2, pady=2, fill=tk.X)
+
     def enable_entry_traces(self) -> None:
         """Turn on entry pub-sub traces. """
         self.balance.enable_traces()
@@ -247,6 +255,16 @@ class DebtPayoffWidget(ttk.Frame):
         self.balance.entry.config(state='disabled')
         self.payment.entry.config(state='disabled')
         self.apr.entry.config(state='disabled')
+
+    def download_image(self) -> None:
+        """Save the current figure to disk. """
+        filepath = filedialog.asksaveasfilename(
+            defaultextension='.jpg',
+            filetypes=[('JPEG files', '*.jpg;*.jpeg'), ('PNG files', '*.png')],
+            initialfile='debtpayoff'
+        )  # ask the user where to save the file
+        if filepath:
+            self.linegraph.fig.savefig(filepath)  # Save the plot to the file
 
     def entry_change_callback(self, _) -> None:
         """Update currently-selected line. """
