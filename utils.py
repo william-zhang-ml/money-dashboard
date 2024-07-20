@@ -122,7 +122,7 @@ class LineGraph:
         return len(self.lines)
 
 
-def calc_balance_over_time(
+def calc_time_until_cleared(
     balance: float = 1000,
     payment: float = 25,
     apr: float = 25
@@ -135,7 +135,7 @@ def calc_balance_over_time(
         apr (float): annual percentage rate
 
     Returns:
-        int, np.ndarray: months until paid off, running balance over months
+        int, np.ndarray: months until paid off, running monthly balance
     """
     interest = apr * balance / 1200
     if payment <= interest:
@@ -146,4 +146,36 @@ def calc_balance_over_time(
         balance = balance + interest - payment
         interest = apr * balance / 1200
     running_balance.append(0)
+    return len(running_balance) - 1, running_balance
+
+
+def calc_time_until_fire(
+    income: float = 3000,
+    balance: float = 1000,
+    deposit: float = 100,
+    rate: float = 7,
+    safe_rate: float = None
+) -> Tuple[int, List[float]]:
+    """Calculate how long it takes to build a passive income stream.
+
+    Args:
+        income (float): desired amount of monthly passive income
+        balance (float): initial portfolio balance
+        deposit (float): monthly investment deposit into portfolio
+        rate (float): annual portfolio yield in growth phase
+        safe_rate (float): annual portfolio yield in maintain phase
+
+    Returns:
+        int, np.ndarray: years until FIRA, running annual balance
+    """
+    safe_rate = rate if safe_rate is None else safe_rate
+    target = 1200 * income / safe_rate
+    if target <= balance:
+        raise RuntimeError('already at FIRE')
+    running_balance = []
+    while balance < target:
+        running_balance.append(balance)
+        gain = rate * balance / 100
+        balance = balance + gain + 12 * deposit
+    running_balance.append(balance)
     return len(running_balance) - 1, running_balance
