@@ -237,7 +237,7 @@ class DebtPayoffWidget(tk.Frame):
 
     def add_line(self) -> None:
         """Add a new line to the graph. """
-        _, running_balance = utils.calc_balance_over_time(
+        _, running_balance = utils.calc_time_until_cleared(
             balance=1000,
             payment=25,
             apr=25
@@ -279,7 +279,193 @@ class DebtPayoffWidget(tk.Frame):
         }
 
         try:
-            _, running_bal = utils.calc_balance_over_time(**meta)
+            _, running_bal = utils.calc_time_until_cleared(**meta)
+        except RuntimeError:
+            pass  # intermediate entry values where interest > payment
+        except TypeError:
+            pass  # balance, payment, or APR have None values
+        else:
+            self.linegraph.update(
+                self.selected,
+                range(len(running_bal)),
+                running_bal,
+                metadata=meta
+            )
+
+
+class FireWidget(tk.Frame):
+    """Widget that shows time until a portfolio generates a goal income. """
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.linegraph = utils.LineGraph()
+        self.selected = None  # index of selected line
+
+        # graph annotations
+        self.linegraph.axes.set_title('Portfolio Schedule')
+        self.linegraph.axes.grid()
+        self.linegraph.axes.set_xlabel('months')
+        self.linegraph.axes.set_ylabel('balance')
+
+        # register a callback to swap selected line
+        canvas = FigureCanvasTkAgg(self.linegraph.fig, self)
+
+        def swap_selected(event) -> None:
+            # identify which line user clicked on
+            for i_line, line in self.linegraph:
+                if event.artist == line:
+                    break
+
+            # pylint: disable=undefined-loop-variable
+            self.disable_entry_traces()
+            self.balance.entry.delete(0, tk.END)
+            self.deposit.entry.delete(0, tk.END)
+            self.rate.entry.delete(0, tk.END)
+            self.balance.entry.config(state='disabled')
+            self.deposit.entry.config(state='disabled')
+            self.rate.entry.config(state='disabled')
+            if self.selected is None:
+                # select line
+                self.linegraph.select(i_line)
+                self.balance.entry.config(state='normal')
+                self.deposit.entry.config(state='normal')
+                self.rate.entry.config(state='normal')
+                self.balance.set_entry(str(line.metadata['balance']))
+                self.deposit.set_entry(str(line.metadata['payment']))
+                self.rate.set_entry(str(line.metadata['apr']))
+                self.enable_entry_traces()
+                self.selected = i_line
+            elif self.selected == i_line:
+                # unselect previously-selected line
+                self.linegraph.unselect(self.selected)
+                self.selected = None
+            else:
+                # unselect previously-selected line
+                self.linegraph.unselect(self.selected)
+
+                # select line
+                self.linegraph.select(i_line)
+                self.disable_entry_traces()
+                self.balance.entry.config(state='normal')
+                self.deposit.entry.config(state='normal')
+                self.rate.entry.config(state='normal')
+                self.balance.set_entry(str(line.metadata['balance']))
+                self.deposit.set_entry(str(line.metadata['payment']))
+                self.rate.set_entry(str(line.metadata['apr']))
+                self.enable_entry_traces()
+                self.selected = i_line
+            # pylint: enable=undefined-loop-variable
+
+        canvas.mpl_connect('pick_event', swap_selected)
+        canvas.get_tk_widget().pack(expand=True, fill=tk.BOTH, padx=2, pady=2)
+
+        # portfolio starting balance
+        self.balance = NaturalNumberEntry(self)
+        self.balance.set_text('Balance')
+        self.balance.pack(padx=2, pady=2, fill=tk.X)
+        self.balance.add_trace(self.entry_change_callback)
+
+        # monthly deposit
+        self.deposit = NaturalNumberEntry(self)
+        self.deposit.set_text('Monthly Deposit')
+        self.deposit.pack(padx=2, pady=2, fill=tk.X)
+        self.deposit.add_trace(self.entry_change_callback)
+
+        # annual growth rate
+        self.rate = NaturalNumberEntry(self)
+        self.rate.set_text('Growth rate')
+        self.rate.pack(padx=2, pady=2, fill=tk.X)
+        self.rate.add_trace(self.entry_change_callback)
+
+        # disable entries b/c new widget instance has no lines to select
+        self.balance.entry.config(state='disabled')
+        self.deposit.entry.config(state='disabled')
+        self.rate.entry.config(state='disabled')
+
+        # add button
+        self.add_button = ttk.Button(
+            self,
+            text='New line',
+            command=self.add_line
+        )
+        self.add_button.pack(padx=2, pady=2, fill=tk.X)
+
+        # delete button
+        self.del_button = ttk.Button(
+            self,
+            text='Delete',
+            command=self.delete_line
+        )
+        self.del_button.pack(padx=2, pady=2, fill=tk.X)
+
+        # save button
+        self.save_button = ttk.Button(
+            self,
+            text='Download image',
+            command=self.download_image
+        )
+        self.save_button.pack(padx=2, pady=2, fill=tk.X)
+
+        # hotkeys (assume master == root)
+        self.master.bind('<Control-s>', lambda _: self.download_image())
+        self.master.bind('<BackSpace>', lambda _: self.delete_line())
+
+    def enable_entry_traces(self) -> None:
+        """Turn on entry pub-sub traces. """
+        self.balance.enable_traces()
+        self.deposit.enable_traces()
+        self.rate.enable_traces()
+
+    def disable_entry_traces(self) -> None:
+        """Turn off entry pub-sub traces. """
+        self.balance.disable_traces()
+        self.deposit.disable_traces()
+        self.rate.disable_traces()
+
+    def add_line(self) -> None:
+        """Add a new line to the graph. """
+        _, running_balance = utils.calc_time_until_cleared(
+            balance=1000,
+            payment=25,
+            apr=25
+        )
+        self.linegraph.plot(
+            running_balance, '-', picker=5,
+            metadata={'balance': 1000, 'payment': 25, 'apr': 25}
+        )
+
+    def delete_line(self) -> None:
+        """Delete the selected line. """
+        if self.selected is None:
+            return
+        self.linegraph.remove(self.selected)
+        self.selected = None
+        self.balance.entry.delete(0, tk.END)
+        self.deposit.entry.delete(0, tk.END)
+        self.rate.entry.delete(0, tk.END)
+        self.balance.entry.config(state='disabled')
+        self.deposit.entry.config(state='disabled')
+        self.rate.entry.config(state='disabled')
+
+    def download_image(self) -> None:
+        """Save the current figure to disk. """
+        filepath = filedialog.asksaveasfilename(
+            defaultextension='.jpg',
+            filetypes=[('JPEG files', '*.jpg;*.jpeg'), ('PNG files', '*.png')],
+            initialfile='debtpayoff'
+        )  # ask the user where to save the file
+        if filepath:
+            self.linegraph.fig.savefig(filepath)  # Save the plot to the file
+
+    def entry_change_callback(self, _) -> None:
+        """Update currently-selected line. """
+        meta = {
+            'balance': self.balance.value,
+            'payment': self.deposit.value,
+            'apr': self.rate.value
+        }
+
+        try:
+            _, running_bal = utils.calc_time_until_cleared(**meta)
         except RuntimeError:
             pass  # intermediate entry values where interest > payment
         except TypeError:
