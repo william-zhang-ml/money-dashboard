@@ -236,15 +236,16 @@ class DebtPayoffWidget(tk.Frame):
             # pylint: enable=undefined-loop-variable
 
         canvas.mpl_connect('pick_event', swap_selected)
-        canvas.get_tk_widget().pack(expand=True, fill=tk.BOTH, padx=2, pady=2)
+        canvas_widget = canvas.get_tk_widget()
+        canvas_widget.pack(expand=True, fill=tk.BOTH, padx=2, pady=2)
 
         self.entries = NaturalNumberEntries(self)
         self.entries.add_entry('Balance')          # debt starting balance
         self.entries.add_entry('Monthly Payment')  # monthly payment
         self.entries.add_entry('APR')              # annual % rate (APR)
         self.entries.disable()                     # b/c obv no lines to edit
-        self.entries.pack(padx=2, pady=2, fill=tk.X)
         self.entries.add_trace(self.entry_change_callback)
+        self.entries.pack(padx=2, pady=2, fill=tk.X)
 
         # add button
         self.add_button = ttk.Button(
@@ -272,7 +273,7 @@ class DebtPayoffWidget(tk.Frame):
 
         # hotkeys (assume master == root)
         self.master.bind('<Control-s>', lambda _: self.download_image())
-        self.master.bind('<BackSpace>', lambda _: self.delete_line())
+        canvas_widget.bind('<BackSpace>', lambda _: self.delete_line())
 
     def add_line(self) -> None:
         """Add a new line to the graph. """
