@@ -1,7 +1,7 @@
 """Standalone tkinter widgets to insert into dashboard. """
 import tkinter as tk
 from tkinter import filedialog, ttk
-from typing import Callable, List
+from typing import Callable, Dict, List
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import utils
 
@@ -105,6 +105,50 @@ class NaturalNumberEntry(ttk.Frame):
         value = self.entry_var.get()
         value = None if value == '' else int(value)
         return value
+
+
+class NaturalNumberEntries(ttk.Frame):
+    """Multiple NaturalNumberEntry instances in one widget. """
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._entries: Dict[str, NaturalNumberEntry] = {}
+
+    def add_entry(self, label: str, entry: str = None):
+        """Add a new labelled-entry widget to this one.
+
+        Args:
+            label (str): label text
+            entry (str): initial entry value
+        """
+        self._entries[label] = NaturalNumberEntry(self)
+        self._entries[label].set_text(label)
+        if entry is not None:
+            self._entries[label].set_entry(entry)
+        self._entries[label].pack(expand=True, fill=tk.BOTH, padx=2, pady=2)
+
+    def load(self, data: Dict[str, str]) -> None:
+        """Load entry text entry widgets.
+
+        Args:
+            data (Dict[str, str]): map from widget label to new entry text
+        """
+        for label, value in data.items():
+            self._entries[label].set_entry(str(value))
+
+    def clear(self) -> None:
+        """Clear entry text in every entry widget. """
+        for entry in self._entries.values():
+            entry.entry.delete(0, tk.END)
+
+    def enable(self) -> None:
+        """Enable user input. """
+        for entry in self._entries.values():
+            entry.entry.config(state='normal')
+
+    def disable(self) -> None:
+        """Disable user input. """
+        for entry in self._entries.values():
+            entry.entry.config(state='disabled')
 
 
 class DebtPayoffWidget(tk.Frame):
