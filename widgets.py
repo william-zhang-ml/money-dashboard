@@ -216,28 +216,12 @@ class DebtPayoffWidget(tk.Frame):
         canvas.mpl_connect('pick_event', swap_selected)
         canvas.get_tk_widget().pack(expand=True, fill=tk.BOTH, padx=2, pady=2)
 
-        # debt starting balance
-        self.balance = NaturalNumberEntry(self)
-        self.balance.set_text('Balance')
-        self.balance.pack(padx=2, pady=2, fill=tk.X)
-        self.balance.add_trace(self.entry_change_callback)
-
-        # monthly payment
-        self.payment = NaturalNumberEntry(self)
-        self.payment.set_text('Monthly Payment')
-        self.payment.pack(padx=2, pady=2, fill=tk.X)
-        self.payment.add_trace(self.entry_change_callback)
-
-        # annual percentage rate (APR)
-        self.apr = NaturalNumberEntry(self)
-        self.apr.set_text('APR')
-        self.apr.pack(padx=2, pady=2, fill=tk.X)
-        self.apr.add_trace(self.entry_change_callback)
-
-        # disable entries b/c new widget instance has no lines to select
-        self.balance.entry.config(state='disabled')
-        self.payment.entry.config(state='disabled')
-        self.apr.entry.config(state='disabled')
+        self.entries = NaturalNumberEntries(self)
+        self.entries.add_entry('Balance')          # debt starting balance
+        self.entries.add_entry('Monthly Payment')  # monthly payment
+        self.entries.add_entry('APR')              # annual % rate (APR)
+        self.entries.disable()                     # b/c obv no lines to edit
+        self.entries.pack(padx=2, pady=2, fill=tk.X)
 
         # add button
         self.add_button = ttk.Button(
