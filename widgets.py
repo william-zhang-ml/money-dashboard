@@ -126,11 +126,19 @@ class NaturalNumberEntries(ttk.Frame):
             self._entries[label].set_entry(entry)
         self._entries[label].pack(expand=True, fill=tk.BOTH, padx=2, pady=2)
 
+    def get(self) -> Dict[str, int]:
+        """Get current entry values.
+
+        Returns:
+            Dict[str, int]: map from entry label to entry value
+        """
+        return {label: entry.value for label, entry in self._entries.items()}
+
     def load(self, data: Dict[str, str]) -> None:
-        """Load entry text entry widgets.
+        """Load entry text into entry widgets.
 
         Args:
-            data (Dict[str, str]): map from widget label to new entry text
+            data (Dict[str, str]): map from entry label to new entry text
         """
         for label, value in data.items():
             self._entries[label].set_entry(str(value))
@@ -149,6 +157,25 @@ class NaturalNumberEntries(ttk.Frame):
         """Disable user input. """
         for entry in self._entries.values():
             entry.entry.config(state='disabled')
+
+    def add_trace(self, callback: Callable) -> None:
+        """Add a new observer trace to notify when entry changes.
+
+        Args:
+            callback (Callable): function that accepts an int
+        """
+        for entry in self._entries.values():
+            entry.add_trace(callback)
+
+    def enable_traces(self) -> None:
+        """Turn on pub-sub traces. """
+        for entry in self._entries.values():
+            entry.enable_traces()
+
+    def disable_traces(self) -> None:
+        """Turn off pub-sub traces. """
+        for entry in self._entries.values():
+            entry.disable_traces()
 
 
 class DebtPayoffWidget(tk.Frame):
@@ -174,23 +201,19 @@ class DebtPayoffWidget(tk.Frame):
                     break
 
             # pylint: disable=undefined-loop-variable
-            self.disable_entry_traces()
-            self.balance.entry.delete(0, tk.END)
-            self.payment.entry.delete(0, tk.END)
-            self.apr.entry.delete(0, tk.END)
-            self.balance.entry.config(state='disabled')
-            self.payment.entry.config(state='disabled')
-            self.apr.entry.config(state='disabled')
+            self.entries.disable_traces()
+            self.entries.clear()
+            self.entries.disable()
             if self.selected is None:
                 # select line
                 self.linegraph.select(i_line)
-                self.balance.entry.config(state='normal')
-                self.payment.entry.config(state='normal')
-                self.apr.entry.config(state='normal')
-                self.balance.set_entry(str(line.metadata['balance']))
-                self.payment.set_entry(str(line.metadata['payment']))
-                self.apr.set_entry(str(line.metadata['apr']))
-                self.enable_entry_traces()
+                self.entries.enable()
+                self.entries.load({
+                    'Balance': str(line.metadata['balance']),
+                    'Monthly Payment': str(line.metadata['payment']),
+                    'APR': str(line.metadata['apr'])
+                })
+                self.entries.enable_traces()
                 self.selected = i_line
             elif self.selected == i_line:
                 # unselect previously-selected line
@@ -202,42 +225,26 @@ class DebtPayoffWidget(tk.Frame):
 
                 # select line
                 self.linegraph.select(i_line)
-                self.disable_entry_traces()
-                self.balance.entry.config(state='normal')
-                self.payment.entry.config(state='normal')
-                self.apr.entry.config(state='normal')
-                self.balance.set_entry(str(line.metadata['balance']))
-                self.payment.set_entry(str(line.metadata['payment']))
-                self.apr.set_entry(str(line.metadata['apr']))
-                self.enable_entry_traces()
+                self.entries.enable()
+                self.entries.load({
+                    'Balance': str(line.metadata['balance']),
+                    'Monthly Payment': str(line.metadata['payment']),
+                    'APR': str(line.metadata['apr'])
+                })
+                self.entries.enable_traces()
                 self.selected = i_line
             # pylint: enable=undefined-loop-variable
 
         canvas.mpl_connect('pick_event', swap_selected)
         canvas.get_tk_widget().pack(expand=True, fill=tk.BOTH, padx=2, pady=2)
 
-        # debt starting balance
-        self.balance = NaturalNumberEntry(self)
-        self.balance.set_text('Balance')
-        self.balance.pack(padx=2, pady=2, fill=tk.X)
-        self.balance.add_trace(self.entry_change_callback)
-
-        # monthly payment
-        self.payment = NaturalNumberEntry(self)
-        self.payment.set_text('Monthly Payment')
-        self.payment.pack(padx=2, pady=2, fill=tk.X)
-        self.payment.add_trace(self.entry_change_callback)
-
-        # annual percentage rate (APR)
-        self.apr = NaturalNumberEntry(self)
-        self.apr.set_text('APR')
-        self.apr.pack(padx=2, pady=2, fill=tk.X)
-        self.apr.add_trace(self.entry_change_callback)
-
-        # disable entries b/c new widget instance has no lines to select
-        self.balance.entry.config(state='disabled')
-        self.payment.entry.config(state='disabled')
-        self.apr.entry.config(state='disabled')
+        self.entries = NaturalNumberEntries(self)
+        self.entries.add_entry('Balance')          # debt starting balance
+        self.entries.add_entry('Monthly Payment')  # monthly payment
+        self.entries.add_entry('APR')              # annual % rate (APR)
+        self.entries.disable()                     # b/c obv no lines to edit
+        self.entries.pack(padx=2, pady=2, fill=tk.X)
+        self.entries.add_trace(self.entry_change_callback)
 
         # add button
         self.add_button = ttk.Button(
@@ -267,18 +274,6 @@ class DebtPayoffWidget(tk.Frame):
         self.master.bind('<Control-s>', lambda _: self.download_image())
         self.master.bind('<BackSpace>', lambda _: self.delete_line())
 
-    def enable_entry_traces(self) -> None:
-        """Turn on entry pub-sub traces. """
-        self.balance.enable_traces()
-        self.payment.enable_traces()
-        self.apr.enable_traces()
-
-    def disable_entry_traces(self) -> None:
-        """Turn off entry pub-sub traces. """
-        self.balance.disable_traces()
-        self.payment.disable_traces()
-        self.apr.disable_traces()
-
     def add_line(self) -> None:
         """Add a new line to the graph. """
         _, running_balance = utils.calc_balance_over_time(
@@ -297,12 +292,8 @@ class DebtPayoffWidget(tk.Frame):
             return
         self.linegraph.remove(self.selected)
         self.selected = None
-        self.balance.entry.delete(0, tk.END)
-        self.payment.entry.delete(0, tk.END)
-        self.apr.entry.delete(0, tk.END)
-        self.balance.entry.config(state='disabled')
-        self.payment.entry.config(state='disabled')
-        self.apr.entry.config(state='disabled')
+        self.entries.clear()
+        self.entries.disable()
 
     def download_image(self) -> None:
         """Save the current figure to disk. """
@@ -316,10 +307,11 @@ class DebtPayoffWidget(tk.Frame):
 
     def entry_change_callback(self, _) -> None:
         """Update currently-selected line. """
+        meta = self.entries.get()
         meta = {
-            'balance': self.balance.value,
-            'payment': self.payment.value,
-            'apr': self.apr.value
+            'balance': meta['Balance'],
+            'payment': meta['Monthly Payment'],
+            'apr': meta['APR']
         }
 
         try:
