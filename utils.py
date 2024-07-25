@@ -37,6 +37,7 @@ class LineGraph:
         if len(self.lines) == self.max_lines:
             return False
         self.lines.append(self.axes.plot(*args, **kwargs)[0])
+        self.unselect(self.num_lines - 1)  # force styling
         if metadata is not None:
             self.lines[-1].metadata = deepcopy(metadata)
         self.fig.canvas.draw()
@@ -97,6 +98,7 @@ class LineGraph:
             return False
         self.lines[which].set_marker('.')
         self.lines[which].set_linestyle('--')
+        self.lines[which].set_color('r')
         self.fig.canvas.draw()
         return True
 
@@ -113,6 +115,7 @@ class LineGraph:
             return False
         self.lines[which].set_marker('')
         self.lines[which].set_linestyle('-')
+        self.lines[which].set_color('k')
         self.fig.canvas.draw()
         return True
 
