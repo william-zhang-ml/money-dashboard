@@ -239,6 +239,7 @@ class DebtPayoffWidget(tk.Frame):
         canvas_widget = canvas.get_tk_widget()
         canvas_widget.pack(expand=True, fill=tk.BOTH, padx=2, pady=2)
 
+        # user inputs
         self.entries = NaturalNumberEntries(self)
         self.entries.add_entry('Balance')          # debt starting balance
         self.entries.add_entry('Monthly Payment')  # monthly payment
@@ -338,9 +339,9 @@ class FireWidget(tk.Frame):
         self.selected = None  # index of selected line
 
         # graph annotations
-        self.linegraph.axes.set_title('Portfolio Schedule')
+        self.linegraph.axes.set_title('How Long Until Money Printer Go Brr')
         self.linegraph.axes.grid()
-        self.linegraph.axes.set_xlabel('months')
+        self.linegraph.axes.set_xlabel('year')
         self.linegraph.axes.set_ylabel('balance')
 
         # register a callback to swap selected line
@@ -353,23 +354,21 @@ class FireWidget(tk.Frame):
                     break
 
             # pylint: disable=undefined-loop-variable
-            self.disable_entry_traces()
-            self.balance.entry.delete(0, tk.END)
-            self.deposit.entry.delete(0, tk.END)
-            self.rate.entry.delete(0, tk.END)
-            self.balance.entry.config(state='disabled')
-            self.deposit.entry.config(state='disabled')
-            self.rate.entry.config(state='disabled')
+            self.entries.disable_traces()
+            self.entries.clear()
+            self.entries.disable()
             if self.selected is None:
                 # select line
                 self.linegraph.select(i_line)
-                self.balance.entry.config(state='normal')
-                self.deposit.entry.config(state='normal')
-                self.rate.entry.config(state='normal')
-                self.balance.set_entry(str(line.metadata['balance']))
-                self.deposit.set_entry(str(line.metadata['payment']))
-                self.rate.set_entry(str(line.metadata['apr']))
-                self.enable_entry_traces()
+                self.entries.enable()
+                self.entries.load({
+                    'Target Income': str(line.metadata['income']),
+                    'Starting Portfolio Value': str(line.metadata['balance']),
+                    'Monthly Deposit': str(line.metadata['deposit']),
+                    'Growth Rate': str(line.metadata['rate']),
+                    'Safe Rate': str(line.metadata['safe_rate'])
+                })
+                self.entries.enable_traces()
                 self.selected = i_line
             elif self.selected == i_line:
                 # unselect previously-selected line
@@ -381,42 +380,32 @@ class FireWidget(tk.Frame):
 
                 # select line
                 self.linegraph.select(i_line)
-                self.disable_entry_traces()
-                self.balance.entry.config(state='normal')
-                self.deposit.entry.config(state='normal')
-                self.rate.entry.config(state='normal')
-                self.balance.set_entry(str(line.metadata['balance']))
-                self.deposit.set_entry(str(line.metadata['payment']))
-                self.rate.set_entry(str(line.metadata['apr']))
-                self.enable_entry_traces()
+                self.entries.enable()
+                self.entries.load({
+                    'Target Income': str(line.metadata['income']),
+                    'Starting Portfolio Value': str(line.metadata['balance']),
+                    'Monthly Deposit': str(line.metadata['deposit']),
+                    'Growth Rate': str(line.metadata['rate']),
+                    'Safe Rate': str(line.metadata['safe_rate'])
+                })
+                self.entries.enable_traces()
                 self.selected = i_line
             # pylint: enable=undefined-loop-variable
 
         canvas.mpl_connect('pick_event', swap_selected)
-        canvas.get_tk_widget().pack(expand=True, fill=tk.BOTH, padx=2, pady=2)
+        canvas_widget = canvas.get_tk_widget()
+        canvas_widget.pack(expand=True, fill=tk.BOTH, padx=2, pady=2)
 
-        # portfolio starting balance
-        self.balance = NaturalNumberEntry(self)
-        self.balance.set_text('Balance')
-        self.balance.pack(padx=2, pady=2, fill=tk.X)
-        self.balance.add_trace(self.entry_change_callback)
-
-        # monthly deposit
-        self.deposit = NaturalNumberEntry(self)
-        self.deposit.set_text('Monthly Deposit')
-        self.deposit.pack(padx=2, pady=2, fill=tk.X)
-        self.deposit.add_trace(self.entry_change_callback)
-
-        # annual growth rate
-        self.rate = NaturalNumberEntry(self)
-        self.rate.set_text('Growth rate')
-        self.rate.pack(padx=2, pady=2, fill=tk.X)
-        self.rate.add_trace(self.entry_change_callback)
-
-        # disable entries b/c new widget instance has no lines to select
-        self.balance.entry.config(state='disabled')
-        self.deposit.entry.config(state='disabled')
-        self.rate.entry.config(state='disabled')
+        # user inputs
+        self.entries = NaturalNumberEntries(self)
+        self.entries.add_entry('Target Income')
+        self.entries.add_entry('Starting Portfolio Value')
+        self.entries.add_entry('Monthly Deposit')
+        self.entries.add_entry('Growth Rate')
+        self.entries.add_entry('Safe Rate')
+        self.entries.disable()  # b/c obv no lines to edit
+        self.entries.add_trace(self.entry_change_callback)
+        self.entries.pack(padx=2, pady=2, fill=tk.X)
 
         # add button
         self.add_button = ttk.Button(
@@ -444,30 +433,26 @@ class FireWidget(tk.Frame):
 
         # hotkeys (assume master == root)
         self.master.bind('<Control-s>', lambda _: self.download_image())
-        self.master.bind('<BackSpace>', lambda _: self.delete_line())
-
-    def enable_entry_traces(self) -> None:
-        """Turn on entry pub-sub traces. """
-        self.balance.enable_traces()
-        self.deposit.enable_traces()
-        self.rate.enable_traces()
-
-    def disable_entry_traces(self) -> None:
-        """Turn off entry pub-sub traces. """
-        self.balance.disable_traces()
-        self.deposit.disable_traces()
-        self.rate.disable_traces()
+        canvas_widget.bind('<BackSpace>', lambda _: self.delete_line())
 
     def add_line(self) -> None:
         """Add a new line to the graph. """
-        _, running_balance = utils.calc_time_until_cleared(
+        _, running_balance = utils.calc_time_until_fire(
+            income=3000,
             balance=1000,
-            payment=25,
-            apr=25
+            deposit=100,
+            rate=7,
+            safe_rate=5
         )
         self.linegraph.plot(
             running_balance, '-', picker=5,
-            metadata={'balance': 1000, 'payment': 25, 'apr': 25}
+            metadata={
+                'income': 3000,
+                'balance': 1000,
+                'deposit': 100,
+                'rate': 7,
+                'safe_rate': 5
+            }
         )
 
     def delete_line(self) -> None:
@@ -476,12 +461,8 @@ class FireWidget(tk.Frame):
             return
         self.linegraph.remove(self.selected)
         self.selected = None
-        self.balance.entry.delete(0, tk.END)
-        self.deposit.entry.delete(0, tk.END)
-        self.rate.entry.delete(0, tk.END)
-        self.balance.entry.config(state='disabled')
-        self.deposit.entry.config(state='disabled')
-        self.rate.entry.config(state='disabled')
+        self.entries.clear()
+        self.entries.disable()
 
     def download_image(self) -> None:
         """Save the current figure to disk. """
@@ -495,14 +476,17 @@ class FireWidget(tk.Frame):
 
     def entry_change_callback(self, _) -> None:
         """Update currently-selected line. """
+        meta = self.entries.get()
         meta = {
-            'balance': self.balance.value,
-            'payment': self.deposit.value,
-            'apr': self.rate.value
+            'income': meta['Target Income'],
+            'balance': meta['Starting Portfolio Value'],
+            'deposit': meta['Monthly Deposit'],
+            'rate': meta['Growth Rate'],
+            'safe_rate': meta['Safe Rate']
         }
 
         try:
-            _, running_bal = utils.calc_time_until_cleared(**meta)
+            _, running_bal = utils.calc_time_until_fire(**meta)
         except RuntimeError:
             pass  # intermediate entry values where interest > payment
         except TypeError:

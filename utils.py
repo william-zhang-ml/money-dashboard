@@ -166,7 +166,7 @@ def calc_time_until_fire(
         safe_rate (float): annual portfolio yield in maintain phase
 
     Returns:
-        int, np.ndarray: years until FIRA, running annual balance
+        int, np.ndarray: years until FIRE, running annual balance
     """
     safe_rate = rate if safe_rate is None else safe_rate
     target = 1200 * income / safe_rate
