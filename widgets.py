@@ -17,7 +17,7 @@ class NaturalNumberEntry(ttk.Frame):
 
         # entry box and backend entry data variable
         self.entry_var = tk.StringVar()
-        self.entry = ttk.Entry(
+        self.entry = tk.Entry(
             self,
             textvariable=self.entry_var,
             validate='key',
@@ -56,6 +56,14 @@ class NaturalNumberEntry(ttk.Frame):
             text (str): what the label should say
         """
         self.prompt.config(text=text)
+
+    def set_entry_color(self, color: str) -> None:
+        """Set entry text color.
+
+        Args:
+            color (str): new entry text color
+        """
+        self.entry.config(fg=color)
 
     def set_entry(self, text: str) -> bool:
         """Set entry text.
@@ -158,6 +166,15 @@ class NaturalNumberEntries(ttk.Frame):
         for entry in self._entries.values():
             entry.entry.config(state='disabled')
 
+    def set_entry_color(self, color: str) -> None:
+        """Set entry text color.
+
+        Args:
+            color (str): new entry text color
+        """
+        for entry in self._entries.values():
+            entry.set_entry_color(color)
+
     def add_trace(self, callback: Callable) -> None:
         """Add a new observer trace to notify when entry changes.
 
@@ -204,6 +221,7 @@ class DebtPayoffWidget(tk.Frame):
             self.entries.disable_traces()
             self.entries.clear()
             self.entries.disable()
+            self.entries.set_entry_color('black')
             if self.selected is None:
                 # select line
                 self.linegraph.select(i_line)
@@ -317,6 +335,7 @@ class DebtPayoffWidget(tk.Frame):
         }
 
         try:
+            self.entries.set_entry_color('red')
             _, running_bal = utils.calc_time_until_cleared(**meta)
         except RuntimeError:
             pass  # intermediate entry values where interest > payment
@@ -329,6 +348,7 @@ class DebtPayoffWidget(tk.Frame):
                 running_bal,
                 metadata=meta
             )
+            self.entries.set_entry_color('black')
 
 
 class FireWidget(tk.Frame):
@@ -354,6 +374,7 @@ class FireWidget(tk.Frame):
                     break
 
             # pylint: disable=undefined-loop-variable
+            self.entries.set_entry_color('black')
             self.entries.disable_traces()
             self.entries.clear()
             self.entries.disable()
@@ -486,6 +507,7 @@ class FireWidget(tk.Frame):
         }
 
         try:
+            self.entries.set_entry_color('red')
             _, running_bal = utils.calc_time_until_fire(**meta)
         except RuntimeError:
             pass  # intermediate entry values where interest > payment
@@ -498,3 +520,4 @@ class FireWidget(tk.Frame):
                 running_bal,
                 metadata=meta
             )
+            self.entries.set_entry_color('black')
