@@ -1,6 +1,6 @@
 """Widget support code, mostly backend data structures and math. """
 from copy import deepcopy
-from typing import Iterable, List, Tuple, Union
+from typing import Dict, Iterable, List, Tuple, Union
 from matplotlib.lines import Line2D
 from matplotlib import pyplot as plt
 
@@ -123,6 +123,35 @@ class LineGraph:
     def num_lines(self) -> int:
         """int: the number of lines on the graph """
         return len(self.lines)
+
+
+def plot_donut(data: Dict[str, float]) -> Tuple[plt.Figure, plt.Axes]:
+    """Plot a donut chart (pie chart but cooler).
+
+    Args:
+        data (Dict[str, float]): data to plot
+
+    Returns:
+        Tuple[plt.Figure, plt.Axes]: plot handles
+    """
+    colors = ['#f99', '#6cf', '#ff9', '#9f9', '#fc9',  '#ccf']
+    fig, axes = plt.subplots()
+    axes.pie(
+        data.values(),
+        autopct='%.1f%%',
+        colors=[colors[idx % len(colors)] for idx in range(len(data))],
+        counterclock=False,
+        labels=data.keys(),
+        labeldistance=1.1,
+        pctdistance=0.85,
+        startangle=180,
+        wedgeprops={
+            'edgecolor': 'white',
+            'linewidth': 4,
+            'width': 0.3
+        }
+    )
+    return fig, axes
 
 
 def calc_time_until_cleared(
