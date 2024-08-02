@@ -125,7 +125,27 @@ class LineGraph:
         return len(self.lines)
 
 
-def plot_donut(data: Dict[str, float]) -> Tuple[plt.Figure, plt.Axes]:
+class DonutGraph:
+    """Donut graph w/utility functions. """
+    def __init__(self):
+        self.fig, self.axes = plt.subplots()
+
+    def plot(self, data: Dict[str, float]) -> None:
+        """Plot a donut chart (pie chart but cooler).
+
+        Args:
+            data (Dict[str, float]): data to plot
+
+        Returns:
+            Tuple[plt.Figure, plt.Axes]: plot handles
+        """
+        plot_donut(data, self.axes)
+
+
+def plot_donut(
+    data: Dict[str, float],
+    axes: plt.Axes = None
+) -> Tuple[plt.Figure, plt.Axes]:
     """Plot a donut chart (pie chart but cooler).
 
     Args:
@@ -135,7 +155,9 @@ def plot_donut(data: Dict[str, float]) -> Tuple[plt.Figure, plt.Axes]:
         Tuple[plt.Figure, plt.Axes]: plot handles
     """
     colors = ['#f99', '#6cf', '#ff9', '#9f9', '#fc9',  '#ccf']
-    fig, axes = plt.subplots()
+    fig = None
+    if axes is None:
+        fig, axes = plt.subplots()
     axes.pie(
         data.values(),
         autopct='%.1f%%',

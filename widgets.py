@@ -195,6 +195,28 @@ class NaturalNumberEntries(ttk.Frame):
             entry.disable_traces()
 
 
+class BudgetWidget(tk.Frame):
+    """Widget for adjusting and visualizing a budget. """
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.donutgraph = utils.DonutGraph()
+        self.donutgraph.plot(
+            {
+                'needs': 50,
+                'wants': 30,
+                'investments': 20
+            }
+        )
+
+        # graph annotations
+        self.donutgraph.axes.set_title('Budget')
+        self.donutgraph.axes.grid()
+
+        canvas = FigureCanvasTkAgg(self.donutgraph.fig, self)
+        canvas_widget = canvas.get_tk_widget()
+        canvas_widget.pack(expand=True, fill=tk.BOTH, padx=2, pady=2)
+
+
 class DebtPayoffWidget(tk.Frame):
     """Widget for showing how APR and payment amount impact payoff time. """
     def __init__(self, *args, **kwargs) -> None:
