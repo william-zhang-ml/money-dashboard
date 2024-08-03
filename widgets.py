@@ -207,6 +207,7 @@ class BudgetWidget(tk.Frame):
                 'investments': 20
             }
         )
+        self.colors = True
 
         # graph annotations
         self.donutgraph.axes.set_title('Budget')
@@ -215,6 +216,39 @@ class BudgetWidget(tk.Frame):
         canvas = FigureCanvasTkAgg(self.donutgraph.fig, self)
         canvas_widget = canvas.get_tk_widget()
         canvas_widget.pack(expand=True, fill=tk.BOTH, padx=2, pady=2)
+
+        # toggle colors button
+        self.toggle_button = ttk.Button(
+            self,
+            text='Toggle Colors',
+            command=self.toggle_colors
+        )
+        self.toggle_button.pack(padx=2, pady=2, fill=tk.X)
+
+    def toggle_colors(self) -> None:
+        """Redraw donut after toggling color versus no color setting. """
+        self.colors = not self.colors
+        if self.colors:
+            self.donutgraph.plot(
+                {
+                    'needs': 50,
+                    'wants': 30,
+                    'investments': 20
+                }
+            )
+        else:
+            self.donutgraph.plot(
+                {
+                    'needs': 50,
+                    'wants': 30,
+                    'investments': 20
+                },
+                colors={
+                    'needs': '#666',
+                    'wants': '#666',
+                    'investments': '#666'
+                }
+            )
 
 
 class DebtPayoffWidget(tk.Frame):

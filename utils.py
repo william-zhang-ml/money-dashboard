@@ -130,38 +130,48 @@ class DonutGraph:
     def __init__(self):
         self.fig, self.axes = plt.subplots()
 
-    def plot(self, data: Dict[str, float]) -> None:
+    def plot(
+        self,
+        data: Dict[str, float],
+        colors: Dict[str, str] = None
+    ) -> None:
         """Plot a donut chart (pie chart but cooler).
 
         Args:
-            data (Dict[str, float]): data to plot
-
-        Returns:
-            Tuple[plt.Figure, plt.Axes]: plot handles
+            data (Dict[str, float]): data to plot ... label -> size
+            colors (Dict[str, str]): wedge color map ... label -> color
         """
-        plot_donut(data, self.axes)
+        plot_donut(data, self.axes, colors)
+        self.fig.canvas.draw()
 
 
 def plot_donut(
     data: Dict[str, float],
-    axes: plt.Axes = None
+    axes: plt.Axes = None,
+    colors: Dict[str, str] = None
 ) -> Tuple[plt.Figure, plt.Axes]:
     """Plot a donut chart (pie chart but cooler).
 
     Args:
-        data (Dict[str, float]): data to plot
+        data (Dict[str, float]): data to plot ... label -> size
+        colors (Dict[str, str]): wedge color map ... label -> color
 
     Returns:
         Tuple[plt.Figure, plt.Axes]: plot handles
     """
-    colors = ['#f99', '#6cf', '#ff9', '#9f9', '#fc9',  '#ccf']
+    if colors is None:
+        colors = ['#f99', '#6cf', '#ff9', '#9f9', '#fc9',  '#ccf']
+        wedge_colors = [colors[idx % len(colors)] for idx in range(len(data))]
+    else:
+        wedge_colors = map(lambda k: colors[k], data)
+
     fig = None
     if axes is None:
         fig, axes = plt.subplots()
     axes.pie(
         data.values(),
         autopct='%.1f%%',
-        colors=[colors[idx % len(colors)] for idx in range(len(data))],
+        colors=wedge_colors,
         counterclock=False,
         labels=data.keys(),
         labeldistance=1.1,
