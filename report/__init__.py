@@ -2,6 +2,7 @@
 import base64
 import io
 from pathlib import Path
+from typing import List
 from jinja2 import Environment, FileSystemLoader
 from matplotlib import pyplot as plt
 
@@ -29,9 +30,22 @@ class Report:
     def __init__(self) -> None:
         environment = Environment(loader=FileSystemLoader(MY_DIR))
         self._template = environment.get_template('template.html')
+        self._images: List[str] = []
+
+    def add_figure(self, fig: plt.Figure) -> None:
+        """Convert and add a new figure to the report.
+
+        Args:
+            fig (plt.Figure): figure to add
+        """
+        self._images.append(fig_to_base64(fig))
 
     def write(self, report_path: str = './report.html') -> None:
-        """Compile report and write to disk. """
-        report = self._template.render(some_text='Hello world!')
+        """Compile report and write to disk.
+
+        Args:
+            report_path (str): where to write report
+        """
+        report = self._template.render(images=self._images)
         with open(report_path, mode='w', encoding='utf-8') as report_file:
             report_file.write(report)

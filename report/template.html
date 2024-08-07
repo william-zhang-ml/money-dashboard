@@ -6,6 +6,9 @@
     <title>Report</title>
 </head>
 <body>
-    <p>{{ some_text }}</p>
+    {% for img in images %}
+    <img src="data:image/jpeg;base64,{{ img }}", alt="missing image">
+    {% endfor %}
+    
 </body>
 </html>
