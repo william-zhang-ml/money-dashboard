@@ -241,6 +241,20 @@ class StringToNumberEntry(ttk.Frame):
             return True
         return proposed[0] != '0' and proposed.isdigit()
 
+    def set_value(self, text: str) -> bool:
+        """Set value text.
+
+        Args:
+            text (str): what the value box should say
+
+        Returns:
+            bool: whether text is valid and set as the value text
+        """
+        if not self.is_valid(text):
+            return False
+        self.value_var.set(text)
+        return True
+
     def add_trace(self, callback: Callable) -> None:
         """Add a new observer trace to notify when entry changes.
 
@@ -287,14 +301,8 @@ class BudgetWidget(tk.Frame):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.donutgraph = utils.DonutGraph()
-        self.donutgraph.plot(
-            {
-                'needs': 50,
-                'wants': 30,
-                'investments': 20
-            }
-        )
-        self.colors = True
+        self._data = []
+        self._colors = True
 
         # graph annotations
         self.donutgraph.axes.set_title('Budget')
@@ -312,30 +320,39 @@ class BudgetWidget(tk.Frame):
         )
         self.toggle_button.pack(padx=2, pady=2, fill=tk.X)
 
-    def toggle_colors(self) -> None:
-        """Redraw donut after toggling color versus no color setting. """
-        self.colors = not self.colors
-        if self.colors:
-            self.donutgraph.plot(
-                {
-                    'needs': 50,
-                    'wants': 30,
-                    'investments': 20
-                }
-            )
+        # add button
+        self.add_button = ttk.Button(
+            self,
+            text='New category',
+            command=self.add_category
+        )
+        self.add_button.pack(padx=2, pady=2, fill=tk.X)
+
+        self.add_category()
+
+    def add_category(self) -> None:
+        """Add a new budget category. """
+        category = StringToNumberEntry(self)
+        category.pack(padx=2, pady=2)
+        self._data.append(category)
+        category.add_trace(lambda _: self.plot())
+        category.set_value('1')
+
+    def plot(self) -> None:
+        """Draw/redraw data. """
+        to_plot = {curr.key: curr.value for curr in self._data if curr.value}
+        if self._colors:
+            self.donutgraph.plot(to_plot)
         else:
             self.donutgraph.plot(
-                {
-                    'needs': 50,
-                    'wants': 30,
-                    'investments': 20
-                },
-                colors={
-                    'needs': '#666',
-                    'wants': '#666',
-                    'investments': '#666'
-                }
+                to_plot,
+                {key: '#777' for key in to_plot}
             )
+
+    def toggle_colors(self) -> None:
+        """Redraw donut after toggling color versus no color setting. """
+        self._colors = not self._colors
+        self.plot()
 
 
 class DebtPayoffWidget(tk.Frame):

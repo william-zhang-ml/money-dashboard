@@ -128,7 +128,7 @@ class LineGraph:
 class DonutGraph:
     """Donut graph w/utility functions. """
     def __init__(self):
-        self.fig, self.axes = plt.subplots()
+        self.fig, self.axes = plt.subplots(figsize=(6, 6))
 
     def plot(
         self,
@@ -141,6 +141,7 @@ class DonutGraph:
             data (Dict[str, float]): data to plot ... label -> size
             colors (Dict[str, str]): wedge color map ... label -> color
         """
+        self.axes.cla()
         plot_donut(data, self.axes, colors)
         self.fig.canvas.draw()
 
