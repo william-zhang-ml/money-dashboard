@@ -337,6 +337,23 @@ class BudgetWidget(tk.Frame):
         self._data.append(category)
         category.add_trace(lambda _: self.plot())
         category.set_value('1')
+        category.bind('<Double-1>', lambda event: self.delete_category(event))
+
+    def delete_category(self, event: tk.Event) -> None:
+        """Remove category line item from frontend and backend.
+
+        Args:
+            event (tk.Event): event that triggered deletion
+        """
+        event.widget.pack_forget()
+        backend_idx = [
+            idx for idx, cat in enumerate(self._data)
+            if id(cat) == id(event.widget)
+        ]
+        assert len(backend_idx) == 1  # otherwise mismatch b/w front/backend
+        backend_idx = backend_idx[0]
+        del self._data[backend_idx]
+        self.plot()
 
     def plot(self) -> None:
         """Draw/redraw data. """
