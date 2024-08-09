@@ -195,6 +195,183 @@ class NaturalNumberEntries(ttk.Frame):
             entry.disable_traces()
 
 
+class StringToNumberEntry(ttk.Frame):
+    """String key to natural number value entry. """
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        # entry box and backend entry data variable
+        self.key_var = tk.StringVar()
+        tk.Entry(
+            self,
+            textvariable=self.key_var,
+        ).pack(padx=2, pady=2, side=tk.LEFT)
+
+        # entry box and backend entry data variable
+        self.value_var = tk.StringVar()
+        tk.Entry(
+            self,
+            textvariable=self.value_var,
+            validate='key',
+            validatecommand=(
+                self.register(self.is_valid),
+                '%P'
+            )
+        ).pack(padx=2, pady=2, side=tk.LEFT)
+
+        # setup mechanism to update observers/subscribers
+        self.disabled = False
+        self.key_var.trace_add('write', self.run_traces)
+        self.value_var.trace_add('write', self.run_traces)
+        self._traces: List[Callable] = []
+        self._backup_value = 0
+
+    @staticmethod
+    def is_valid(proposed: str) -> bool:
+        """Check whether text is a natural number (no leading zero).
+           Empty string is also okay.
+
+        Args:
+            proposed (str): text to check
+
+        Returns:
+            bool: whether text is a natural number (no leading zero)
+        """
+        if proposed == '':
+            return True
+        return proposed[0] != '0' and proposed.isdigit()
+
+    def set_value(self, text: str) -> bool:
+        """Set value text.
+
+        Args:
+            text (str): what the value box should say
+
+        Returns:
+            bool: whether text is valid and set as the value text
+        """
+        if not self.is_valid(text):
+            return False
+        self.value_var.set(text)
+        return True
+
+    def add_trace(self, callback: Callable) -> None:
+        """Add a new observer trace to notify when entry changes.
+
+        Args:
+            callback (Callable): function that accepts a Dict[str, int]
+        """
+        self._traces.append(callback)
+
+    def run_traces(self, *_) -> None:
+        """Send entry value (or repeat previous value if '') to observers. """
+        if self.disabled:
+            return
+        val_to_send = self.value
+        if val_to_send is None:
+            val_to_send = self._backup_value
+        else:
+            self._backup_value = val_to_send
+        for callback in self._traces:
+            callback({self.key: val_to_send})
+
+    def enable_traces(self) -> None:
+        """Turn on pub-sub traces. """
+        self.disabled = False
+
+    def disable_traces(self) -> None:
+        """Turn off pub-sub traces. """
+        self.disabled = True
+
+    @property
+    def key(self) -> str:
+        """str: current key-entry value """
+        return self.key_var.get()
+
+    @property
+    def value(self) -> int:
+        """int: current value-entry value (None if '') """
+        value = self.value_var.get()
+        value = None if value == '' else int(value)
+        return value
+
+
+class BudgetWidget(tk.Frame):
+    """Widget for adjusting and visualizing a budget. """
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.donutgraph = utils.DonutGraph()
+        self._data = []
+        self._colors = True
+
+        # graph annotations
+        self.donutgraph.axes.set_title('Budget')
+        self.donutgraph.axes.grid()
+
+        canvas = FigureCanvasTkAgg(self.donutgraph.fig, self)
+        canvas_widget = canvas.get_tk_widget()
+        canvas_widget.pack(expand=True, fill=tk.BOTH, padx=2, pady=2)
+
+        # toggle colors button
+        self.toggle_button = ttk.Button(
+            self,
+            text='Toggle Colors',
+            command=self.toggle_colors
+        )
+        self.toggle_button.pack(padx=2, pady=2, fill=tk.X)
+
+        # add button
+        self.add_button = ttk.Button(
+            self,
+            text='New category',
+            command=self.add_category
+        )
+        self.add_button.pack(padx=2, pady=2, fill=tk.X)
+
+        self.add_category()
+
+    def add_category(self) -> None:
+        """Add a new budget category. """
+        category = StringToNumberEntry(self)
+        category.pack(padx=2, pady=2)
+        self._data.append(category)
+        category.add_trace(lambda _: self.plot())
+        category.set_value('1')
+        category.bind('<Double-1>', lambda event: self.delete_category(event))
+
+    def delete_category(self, event: tk.Event) -> None:
+        """Remove category line item from frontend and backend.
+
+        Args:
+            event (tk.Event): event that triggered deletion
+        """
+        event.widget.pack_forget()
+        backend_idx = [
+            idx for idx, cat in enumerate(self._data)
+            if id(cat) == id(event.widget)
+        ]
+        assert len(backend_idx) == 1  # otherwise mismatch b/w front/backend
+        backend_idx = backend_idx[0]
+        del self._data[backend_idx]
+        self.plot()
+
+    def plot(self) -> None:
+        """Draw/redraw data. """
+        to_plot = {curr.key: curr.value for curr in self._data if curr.value}
+        if self._colors:
+            self.donutgraph.plot(to_plot)
+        else:
+            self.donutgraph.plot(
+                to_plot,
+                {key: '#777' for key in to_plot}
+            )
+
+    def toggle_colors(self) -> None:
+        """Redraw donut after toggling color versus no color setting. """
+        self._colors = not self._colors
+        self.plot()
+
+
 class DebtPayoffWidget(tk.Frame):
     """Widget for showing how APR and payment amount impact payoff time. """
     def __init__(self, *args, **kwargs) -> None:

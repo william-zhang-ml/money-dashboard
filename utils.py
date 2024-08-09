@@ -1,6 +1,6 @@
 """Widget support code, mostly backend data structures and math. """
 from copy import deepcopy
-from typing import Iterable, List, Tuple, Union
+from typing import Dict, Iterable, List, Tuple, Union
 from matplotlib.lines import Line2D
 from matplotlib import pyplot as plt
 
@@ -123,6 +123,68 @@ class LineGraph:
     def num_lines(self) -> int:
         """int: the number of lines on the graph """
         return len(self.lines)
+
+
+class DonutGraph:
+    """Donut graph w/utility functions. """
+    def __init__(self):
+        self.fig, self.axes = plt.subplots(figsize=(6, 6))
+
+    def plot(
+        self,
+        data: Dict[str, float],
+        colors: Dict[str, str] = None
+    ) -> None:
+        """Plot a donut chart (pie chart but cooler).
+
+        Args:
+            data (Dict[str, float]): data to plot ... label -> size
+            colors (Dict[str, str]): wedge color map ... label -> color
+        """
+        self.axes.cla()
+        plot_donut(data, self.axes, colors)
+        self.fig.canvas.draw()
+
+
+def plot_donut(
+    data: Dict[str, float],
+    axes: plt.Axes = None,
+    colors: Dict[str, str] = None
+) -> Tuple[plt.Figure, plt.Axes]:
+    """Plot a donut chart (pie chart but cooler).
+
+    Args:
+        data (Dict[str, float]): data to plot ... label -> size
+        colors (Dict[str, str]): wedge color map ... label -> color
+
+    Returns:
+        Tuple[plt.Figure, plt.Axes]: plot handles
+    """
+    if colors is None:
+        colors = ['#f99', '#6cf', '#ff9', '#9f9', '#fc9',  '#ccf']
+        wedge_colors = [colors[idx % len(colors)] for idx in range(len(data))]
+    else:
+        wedge_colors = map(lambda k: colors[k], data)
+
+    fig = None
+    if axes is None:
+        fig, axes = plt.subplots()
+    axes.pie(
+        data.values(),
+        autopct='%.1f%%',
+        colors=wedge_colors,
+        counterclock=False,
+        labels=data.keys(),
+        labeldistance=1.1,
+        pctdistance=0.85,
+        startangle=180,
+        wedgeprops={
+            'edgecolor': 'white',
+            'linewidth': 4,
+            'width': 0.3
+        }
+    )
+    return fig, axes
 
 
 def calc_time_until_cleared(
