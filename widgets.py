@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import filedialog, ttk
 from typing import Callable, Dict, List
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import basicwidgets
 import utils
 
 
@@ -460,11 +461,8 @@ class DebtPayoffWidget(tk.Frame):
         self.del_button.pack(padx=2, pady=2, fill=tk.X)
 
         # save button
-        self.save_button = ttk.Button(
-            self,
-            text='Download image',
-            command=self.download_image
-        )
+        self.save_button = basicwidgets.SaveFigureButton(text='Download image')
+        self.save_button.link_fig(self.donutgraph.fig)
         self.save_button.pack(padx=2, pady=2, fill=tk.X)
 
         # hotkeys (assume master == root)
