@@ -2,7 +2,7 @@
 
 This app implements my personal model for the stages of personal finance.
 
-### Stage 1
+### Stage 1 - survival
 
 Passing criteria: excess income > 0.
 
@@ -10,6 +10,18 @@ You need to have extra money at the end of the month.
 You can either work more or spend less.
 
 The subapp for stage 1 will help you plan shifts and budget.
+
+###  Stage 2 - stable
+
+Passing criteria: needs-to-excess are 2-to-1, 6 month emergency fund.
+
+You need a lot extra at the end of the month.
+Having a lot extra means you can quickly build a 6 month emergency fund,
+    rebuild an emergency fund after an emergency,
+    and pay off consumer debt in a more reasonable amount of time.
+A credit card is NOT an emergency fund. It is a horrifying last resort.
+
+The subapp for stage 2 is the same as stage 1.
 
 ### Stage ?
 
