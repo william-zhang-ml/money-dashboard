@@ -184,6 +184,8 @@ def plot_donut(
             'width': 0.3
         }
     )
+    total = sum(data.values())
+    axes.text(0, 0, f'{total}', ha='center', va='center', fontsize=16)
     return fig, axes
 
 
