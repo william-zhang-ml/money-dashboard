@@ -301,7 +301,7 @@ class BudgetWidget(tk.Frame):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.donutgraph = utils.DonutGraph()
-        self._data = []
+        self._data = {}
         self._colors = True
 
         # graph annotations
@@ -320,7 +320,9 @@ class BudgetWidget(tk.Frame):
         )
         self.toggle_button.pack(padx=2, pady=2, fill=tk.X)
 
-        # add button
+        # add budget category widgets
+        self.category = StringToNumberEntry(self)
+        self.category.pack(padx=2, pady=2)
         self.add_button = ttk.Button(
             self,
             text='New category',
@@ -328,42 +330,33 @@ class BudgetWidget(tk.Frame):
         )
         self.add_button.pack(padx=2, pady=2, fill=tk.X)
 
-        self.add_category()
-
     def add_category(self) -> None:
         """Add a new budget category. """
-        category = StringToNumberEntry(self)
-        category.pack(padx=2, pady=2)
-        self._data.append(category)
-        category.add_trace(lambda _: self.plot())
-        category.set_value('1')
-        category.bind('<Double-1>', lambda event: self.delete_category(event))
+        if self.category.value is None:
+            return
+        self._data[self.category.key] = self.category.value
+        self.plot()
 
-    def delete_category(self, event: tk.Event) -> None:
-        """Remove category line item from frontend and backend.
+    def delete_category(self, category: str) -> None:
+        """Delete category from budget.
 
         Args:
-            event (tk.Event): event that triggered deletion
+            category (str): category to delete
         """
-        event.widget.pack_forget()
-        backend_idx = [
-            idx for idx, cat in enumerate(self._data)
-            if id(cat) == id(event.widget)
-        ]
-        assert len(backend_idx) == 1  # otherwise mismatch b/w front/backend
-        backend_idx = backend_idx[0]
-        del self._data[backend_idx]
+        del self._data[category]
         self.plot()
 
     def plot(self) -> None:
         """Draw/redraw data. """
-        to_plot = {curr.key: curr.value for curr in self._data if curr.value}
+        if len(self._data) == 0:
+            return
+
         if self._colors:
-            self.donutgraph.plot(to_plot)
+            self.donutgraph.plot(self._data)
         else:
             self.donutgraph.plot(
-                to_plot,
-                {key: '#777' for key in to_plot}
+                self._data,
+                {k: '#777' for k in self._data}
             )
 
     def toggle_colors(self) -> None:
