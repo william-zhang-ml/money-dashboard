@@ -129,6 +129,8 @@ class DonutGraph:
     """Donut graph w/utility functions. """
     def __init__(self):
         self.fig, self.axes = plt.subplots(figsize=(6, 6))
+        self.wedges = None
+        self.labels = None
 
     def plot(
         self,
@@ -142,8 +144,14 @@ class DonutGraph:
             colors (Dict[str, str]): wedge color map ... label -> color
         """
         self.axes.cla()
-        plot_donut(data, self.axes, colors)
+        self.labels = list(data.keys())
+        _, _, self.wedges = plot_donut(data, self.axes, colors)
         self.fig.canvas.draw()
+
+    def get_wedge_key(self, wedge) -> str:
+        """Get the label corresponding to a wedge. """
+        idx = self.wedges.index(wedge)
+        return self.labels[idx]
 
 
 def plot_donut(
@@ -169,7 +177,7 @@ def plot_donut(
     fig = None
     if axes is None:
         fig, axes = plt.subplots()
-    axes.pie(
+    wedges, *_ = axes.pie(
         data.values(),
         autopct='%.1f%%',
         colors=wedge_colors,
@@ -182,11 +190,13 @@ def plot_donut(
             'edgecolor': 'white',
             'linewidth': 4,
             'width': 0.3
-        }
+        },
     )
+    for wedge in wedges:
+        wedge.set_picker(True)
     total = sum(data.values())
     axes.text(0, 0, f'{total}', ha='center', va='center', fontsize=16)
-    return fig, axes
+    return fig, axes, wedges
 
 
 def calc_time_until_cleared(
