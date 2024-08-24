@@ -304,13 +304,16 @@ class BudgetWidget(tk.Frame):
         self._data = {}
         self._colors = True
 
-        # graph annotations
-        self.donutgraph.axes.set_title('Budget')
-        self.donutgraph.axes.grid()
-
         canvas = FigureCanvasTkAgg(self.donutgraph.fig, self)
         canvas_widget = canvas.get_tk_widget()
         canvas_widget.pack(expand=True, fill=tk.BOTH, padx=2, pady=2)
+
+        # delete category event handler
+        def delete_selected(event):
+            wedge_key = self.donutgraph.get_wedge_key(event.artist)
+            self.delete_category(wedge_key)
+
+        canvas.mpl_connect('pick_event', delete_selected)
 
         # toggle colors button
         self.toggle_button = ttk.Button(
@@ -349,6 +352,8 @@ class BudgetWidget(tk.Frame):
     def plot(self) -> None:
         """Draw/redraw data. """
         if len(self._data) == 0:
+            self.donutgraph.axes.cla()
+            self.donutgraph.fig.canvas.draw()
             return
 
         if self._colors:
