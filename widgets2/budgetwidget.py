@@ -5,7 +5,7 @@ from typing import List
 from matplotlib import pyplot as plt
 from matplotlib.backend_bases import PickEvent
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from basicwidgets import StringToNumberEntry
+from .basicwidgets import StringToNumberEntry
 
 
 COLORS = ['#f99', '#6cf', '#ff9', '#9f9', '#fc9',  '#ccf']
@@ -36,7 +36,13 @@ class BudgetWidget(tk.Frame):
         self._grayscale = False
 
         # graph
-        fig, _ = plt.subplots()
+        fig, axes = plt.subplots()
+        axes.xaxis.set_visible(False)
+        axes.yaxis.set_visible(False)
+        axes.spines['top'].set_visible(False)
+        axes.spines['right'].set_visible(False)
+        axes.spines['bottom'].set_visible(False)
+        axes.spines['left'].set_visible(False)
         self._canvas = FigureCanvasTkAgg(fig, self)
         self._canvas.mpl_connect('pick_event', self.select)
         canvas_widget = self._canvas.get_tk_widget()
@@ -51,32 +57,35 @@ class BudgetWidget(tk.Frame):
             return
         self._categories.append(self._category_inp.key)
         self._amounts.append(self._category_inp.value)
+        self._category_inp.clear()
         self.plot()
 
     def plot(self) -> None:
         """Draw/redraw data. """
-        self._canvas.figure.axes[0].cla()
-        if len(self._categories) == 0:
-            return
-        self._wedges, *_ = self._canvas.figure.axes[0].pie(
-            self._amounts,
-            autopct='%.1f%%',
-            colors=self.get_wedge_colors(),
-            counterclock=False,
-            labels=self._categories,
-            labeldistance=1.1,
-            pctdistance=0.85,
-            startangle=180,
-            wedgeprops={
-                'edgecolor': 'white',
-                'linewidth': 2,
-                'width': 0.3
-            },
-        )
-        for idx, wedge in enumerate(self._wedges):
-            wedge.idx = idx
-            wedge.set_picker(True)
-            wedge.set_zorder(0)
+        axes = self._canvas.figure.axes[0]
+        axes.cla()
+        if len(self._categories) > 0:
+            self._wedges, *_ = axes.pie(
+                self._amounts,
+                autopct='%.1f%%',
+                colors=self.get_wedge_colors(),
+                counterclock=False,
+                labels=self._categories,
+                labeldistance=1.1,
+                pctdistance=0.85,
+                startangle=180,
+                wedgeprops={
+                    'edgecolor': 'white',
+                    'linewidth': 1,
+                    'width': 0.3
+                },
+            )
+            for idx, wedge in enumerate(self._wedges):
+                wedge.idx = idx
+                wedge.set_picker(True)
+                wedge.set_zorder(0)
+            total = sum(self._amounts)
+            axes.text(0, 0, f'{total}', ha='center', va='center', fontsize=16)
         self._canvas.draw()
 
     def select(self, event: PickEvent) -> None:
@@ -114,6 +123,7 @@ class BudgetWidget(tk.Frame):
         del self._categories[self._selected.idx]
         del self._amounts[self._selected.idx]
         self._selected = None
+        self._enter_add_mode()
         self.plot()
 
     def get_wedge_colors(self) -> List[str]:
