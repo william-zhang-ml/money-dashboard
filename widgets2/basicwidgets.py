@@ -13,14 +13,15 @@ class StringToNumberEntry(ttk.Frame):
 
         # entry box and backend entry data variable
         self.key_var = tk.StringVar()
-        tk.Entry(
+        self.key_entry = tk.Entry(
             self,
             textvariable=self.key_var,
-        ).pack(padx=2, pady=2, side=tk.LEFT)
+        )
+        self.key_entry.pack(padx=2, pady=2, side=tk.LEFT)
 
         # entry box and backend entry data variable
         self.value_var = tk.StringVar()
-        tk.Entry(
+        self.value_entry = tk.Entry(
             self,
             textvariable=self.value_var,
             validate='key',
@@ -28,7 +29,8 @@ class StringToNumberEntry(ttk.Frame):
                 self.register(self.is_valid),
                 '%P'
             )
-        ).pack(padx=2, pady=2, side=tk.LEFT)
+        )
+        self.value_entry.pack(padx=2, pady=2, side=tk.LEFT)
 
         # setup mechanism to update observers/subscribers
         self.disabled = False
@@ -65,6 +67,11 @@ class StringToNumberEntry(ttk.Frame):
             return False
         self.value_var.set(text)
         return True
+
+    def clear(self) -> None:
+        """Clear key/value. """
+        self.key_entry.delete(0, tk.END)
+        self.value_entry.delete(0, tk.END)
 
     def add_trace(self, callback: Callable) -> None:
         """Add a new observer trace to notify when entry changes.
