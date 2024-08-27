@@ -1,6 +1,8 @@
 """Basic widgets that the more application-specific widgets can use. """
 from functools import partial
+import tkinter as tk
 from tkinter import filedialog, ttk
+from typing import Callable, List
 from matplotlib import pyplot as plt
 
 
@@ -95,7 +97,9 @@ class StringToNumberEntry(ttk.Frame):
     @property
     def key(self) -> str:
         """str: current key-entry value """
-        return self.key_var.get()
+        key = self.key_var.get()
+        key = None if key == '' else key
+        return key
 
     @property
     def value(self) -> int:
