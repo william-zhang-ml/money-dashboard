@@ -7,7 +7,8 @@
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
-    <div id="graph"></div>
+    <div id="line-graph"></div>
+    <div id="bar-graph"></div>
     <script>
         var lineData = {
             x: [-2, -1, 0, 1, 2],
@@ -16,13 +17,28 @@
             type: 'scatter',
             name: 'parabola'
         }
-        var data = [lineData];
         var layout = {
             title: 'Parabola Example',
             xaxis: { title: 'x' },
             yaxis: { title: 'y' }
         };
-        Plotly.newPlot('graph', data, layout);
+        Plotly.newPlot('line-graph', [lineData], layout);
+
+        var barData = {
+            x: ['A', 'B', 'C'],
+            y: [10, 20, 30],
+            type: 'bar',
+            name: 'bar',
+            marker: {
+                color: ['#4caf50', '#2196f3', '#f44336']
+            }
+        }
+        var layout = {
+            title: 'Bar Example',
+            xaxis: { title: 'x' },
+            yaxis: { title: 'y' },
+        };
+        Plotly.newPlot('bar-graph', [barData], layout);
     </script>
 </body>
 
