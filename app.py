@@ -5,7 +5,7 @@ The exact toolset presented will depend on where you're currently at.
 The UI will evolve/unlock new tools as you progress through different stages.
 """
 import tkinter as tk
-from widgets import BudgetWidget
+from widgets2.budgetwidget import BudgetWidget
 
 
 if __name__ == '__main__':
